@@ -47,10 +47,34 @@ async function renderRoute(plate){
  if(!map){map=L.map('vtrMap').setView([29.695,76.985],13);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);}
  layers.forEach(layer=>map.removeLayer(layer));layers=[];
  const locations=new Map();points.forEach((r,i)=>{const key=`${r.lat},${r.lng}`;if(!locations.has(key))locations.set(key,[]);locations.get(key).push({...r,order:i+1});});
- locations.forEach(group=>{const first=group[0];const marker=L.circleMarker([first.lat,first.lng],{radius:9,color:'#1d4ed8',fillOpacity:.8}).addTo(map);marker.bindTooltip(group.map(r=>`${r.order}. ${r.location}`).join(' · '));marker.bindPopup(group.map(r=>`<strong>${r.order}. ${esc(r.location)}</strong><br>${esc(r.camera_id)}<br>${esc(r.captured_at)}`).join('<hr>'));layers.push(marker);});
+ locations.forEach(group=>{
+  const first=group[0];
+  const isFirst=group.some(r=>r.order===1);
+  const isLatest=group.some(r=>r.order===points.length);
+  const markerColor=isLatest?'#ef4444':isFirst?'#10b981':'#2563eb';
+  const marker=L.circleMarker([first.lat,first.lng],{radius:9,color:markerColor,fillColor:markerColor,fillOpacity:.85,weight:2}).addTo(map);
+  marker.bindTooltip(group.map(r=>`${r.order}. ${r.location}`).join(' • '));
+  marker.bindPopup(group.map(r=>`<strong>${r.order}. ${esc(r.location)}</strong><br>${esc(r.camera_id)}<br>${esc(r.captured_at)}`).join('<hr>'));
+  layers.push(marker);
+ });
  const path=[];points.forEach(r=>{const point=[r.lat,r.lng];if(!path.length||String(path[path.length-1])!==String(point))path.push(point);});
  caption.textContent=points.length===0?'No registered camera coordinates for these sightings.':locations.size===1?'Vehicle seen at one camera location. No road route can be inferred from one location.':'Dashed line shows camera detection order. A suggested road route is loading; it is not proof of the actual travelled path.';
- if(path.length>1)layers.push(L.polyline(path,{color:'#64748b',weight:2,dashArray:'7 7'}).addTo(map));
+ if(path.length>1){
+  layers.push(L.polyline(path,{color:'#64748b',weight:2,dashArray:'7 7'}).addTo(map));
+  for(let i=0;i<path.length-1;i++){
+   const p1=path[i],p2=path[i+1];
+   const midLat=(p1[0]+p2[0])/2, midLng=(p1[1]+p2[1])/2;
+   const dLat=p2[0]-p1[0], dLng=p2[1]-p1[1];
+   const deg=Math.round(Math.atan2(dLng,dLat)*180/Math.PI);
+   const arrowIcon=L.divIcon({
+    className:'vtr-direction-arrow',
+    html:`<div style="transform:rotate(${deg}deg);color:#ef4444;font-size:18px;font-weight:900;line-height:1;text-shadow:0 0 3px #fff;">➤</div>`,
+    iconSize:[20,20],
+    iconAnchor:[10,10]
+   });
+   layers.push(L.marker([midLat,midLng],{icon:arrowIcon,interactive:false}).addTo(map));
+  }
+ }
  requestAnimationFrame(()=>{map.invalidateSize();if(points.length)map.fitBounds(points.map(r=>[r.lat,r.lng]),{padding:[25,25],maxZoom:16});});
  if(path.length>1&&path.length<=25){
   try{const coords=path.map(p=>`${p[1]},${p[0]}`).join(';');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);let res;try{res=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`,{signal:controller.signal});}finally{clearTimeout(timeout);}const data=await res.json();if(version!==routeVersion)return;const road=data.routes?.[0];if(!road)throw new Error('No road route');layers.push(L.geoJSON(road.geometry,{style:{color:'#2563eb',weight:4}}).addTo(map));caption.textContent=`Suggested road route: ${(road.distance/1000).toFixed(1)} km. Pins are observed camera locations; the road path is estimated.`;}

@@ -13,6 +13,10 @@ Provides REST API, video processing pipeline endpoints, and static web dashboard
 """
 import os
 import sys
+try:
+    import torch
+except Exception:
+    pass
 os.environ.setdefault('PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION', 'python')
 import io
 import base64

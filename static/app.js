@@ -17640,16 +17640,21 @@ window.addFilesToBatchQueue = function (files) {
         capturedAt = `${nameMatch[1]}-${nameMatch[2]}-${nameMatch[3]}T${nameMatch[4]}:${nameMatch[5]}`;
       } catch (e) {}
     }
+    const defaultCam = (window.karnalCameraRegistry && typeof window.karnalCameraRegistry.getDefaultCamera === 'function') ? window.karnalCameraRegistry.getDefaultCamera() : null;
+    const initialCamId = defaultCam ? defaultCam.id : (preset.name === 'Namastey Chowk 1' ? 'KNL-ICCC-036-C01' : null);
+    const initialLocName = defaultCam ? defaultCam.name : (preset.name || 'Namastey Chowk 1');
+    const initialLat = defaultCam ? defaultCam.lat : (preset.lat || 29.66839);
+    const initialLng = defaultCam ? defaultCam.lng : (preset.lng || 76.9913);
     window.batchUploadQueue.push({
       id: 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       file: f,
       name: f.name,
       size: f.size,
       isVideo: f.type.startsWith('video/') || (/\.(mp4|mov|avi|mkv|webm)$/i).test(f.name),
-      locationName: preset.name,
-      cameraId: null,
-      lat: preset.lat,
-      lng: preset.lng,
+      locationName: initialLocName,
+      cameraId: initialCamId,
+      lat: initialLat,
+      lng: initialLng,
       capturedAt: capturedAt,
       status: 'ready'
     });
@@ -17893,10 +17898,38 @@ window.startBatchAnalysis = async function () {
       formData.append('target', currentTarget);
       const taskId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       formData.append('task_id', taskId);
-      const res = await fetch('/api/unified/upload', {
-        method: 'POST',
-        body: formData
-      });
+      let batchPollTimer = null;
+      let isBatchItemDone = false;
+      batchPollTimer = setInterval(async () => {
+        if (isBatchItemDone) return;
+        try {
+          const pRes = await fetch('/api/unified/upload-progress?task_id=' + encodeURIComponent(taskId));
+          if (pRes.ok) {
+            const pData = await pRes.json();
+            if (pData && pData.status && pData.status !== 'waiting') {
+              const currF = pData.current_frame || 0;
+              const totalF = Math.max(pData.total_frames || 0, currF);
+              const framesLabel = totalF > 0 ? ('Frames: ' + currF + ' / ' + totalF) : ('Frames: ' + currF);
+              const pctOverall = Math.round((i / total) * 100 + (pData.pct || 0) / total);
+              showProgress(item.name + ': ' + (pData.message || 'Analyzing...'), pctOverall, framesLabel);
+            }
+          }
+        } catch (_) {}
+      }, 500);
+
+      let res;
+      try {
+        res = await fetch('/api/unified/upload', {
+          method: 'POST',
+          body: formData
+        });
+      } finally {
+        isBatchItemDone = true;
+        if (batchPollTimer) {
+          clearInterval(batchPollTimer);
+          batchPollTimer = null;
+        }
+      }
       if (res.ok) {
         const data = await res.json();
         item.status = 'completed';
@@ -17914,8 +17947,12 @@ window.startBatchAnalysis = async function () {
             });
           });
         }
-        if (i === total - 1 && typeof showAnprPhotoInspection === 'function' && !item.isVideo) {
-          showAnprPhotoInspection(data, item.name);
+        if (i === total - 1) {
+          if (item.isVideo && typeof showAnprVideoInspection === 'function') {
+            showAnprVideoInspection(data);
+          } else if (!item.isVideo && typeof showAnprPhotoInspection === 'function') {
+            showAnprPhotoInspection(data, item.name);
+          }
         }
       } else {
         item.status = 'error';
