@@ -94,7 +94,17 @@ class CameraStreamManager:
 
     def switch_pipeline_models(self, vehicle_model: Optional[str]=None, plate_model: Optional[str]=None, ocr_model: Optional[str]=None):
         """Propagates model switch to the camera stream's active ANPR pipeline."""
-        pipeline = self._get_pipeline()
+        # Standby slots should use the selection when connected, without loading
+        # a separate set of heavy models during every profile change.
+        if self._pipeline is None:
+            if vehicle_model:
+                self.config.vehicle_model_name = vehicle_model
+            if plate_model:
+                self.config.plate_model_path = plate_model
+            if ocr_model:
+                self.config.ocr_model = ocr_model
+            return
+        pipeline = self._pipeline
         if vehicle_model:
             pipeline.switch_vehicle_model(vehicle_model)
         if plate_model:
@@ -791,6 +801,8 @@ class CameraStreamManager:
                             ad['ai_time'] = t_ai_now
                             pbox = ad.get('plate_bbox')
                             v_rec = pipeline.track_merger.vehicles.get(ad.get('vehicle_id')) if 'vehicle_id' in ad else None
+                            if v_rec:
+                                v_rec.live_observation_count = getattr(v_rec, 'live_observation_count', 0) + 1
                             reading = v_rec.readings[-1] if v_rec and v_rec.readings else None
                             if v_rec and v_rec.final_plate or (reading and reading.ocr_confidence >= 0.4):
                                 norm_plate = v_rec.final_plate if v_rec and v_rec.final_plate else reading.normalized_text if reading and reading.normalized_text and (reading.normalized_text != 'UNREADABLE') else ''
@@ -900,26 +912,27 @@ class CameraStreamManager:
                                                     self.passage_captures[passage_key] = new_cid
                                                     self.passage_confidences[passage_key] = final_conf_pct
                                                     self.logged_sightings_in_passage.add(passage_key)
-                                elif v_rec and getattr(v_rec, 'frame_count', 0) >= 12 and (not getattr(v_rec, 'logged_fallback', False)):
-                                    v_rec.logged_fallback = True
-                                    passage_key = f'{self.passage_session_id}_{v_rec.vehicle_id}'
-                                    ad['passage_key'] = passage_key
-                                    ad['vehicle_id'] = getattr(v_rec, 'vehicle_id', None)
-                                    ad['plate_number'] = norm_plate
-                                    vx1, vy1, vx2, vy2 = ad.get('bbox', (0, 0, frame_w, frame_h))
-                                    v_crop = getattr(v_rec, 'best_vehicle_crop', None)
-                                    if v_crop is None or getattr(v_crop, 'size', 0) == 0:
-                                        v_crop = ai_frame[max(0, vy1):min(frame_h, vy2), max(0, vx1):min(frame_w, vx2)]
-                                    if self.captured_db and v_crop is not None and (getattr(v_crop, 'size', 0) > 0):
-                                        fb_cid = self.captured_db.add_capture(plate_number='UNREADABLE', display_plate='UNREADABLE', confidence=0.0, plate_img=None, vehicle_img=v_crop, annotated_img=ai_frame, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=False, format_type='unreadable', quality_gate_passed=False, quality_reason='Live Stream Unreadable Vehicle', is_fallback=True, track_id=tid, vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
-                                        if fb_cid and fb_cid > 0:
-                                            with self._lock:
-                                                self.passage_captures[passage_key] = fb_cid
                                     if match_type == 'EXACT' and db_match and self.trail_db:
                                         trail_key = f'trail_{passage_key}'
                                         if trail_key not in self.logged_sightings_in_passage:
                                             self.logged_sightings_in_passage.add(trail_key)
                                             self.trail_db.record_sighting(vehicle_id=db_match['id'], registration_number=norm_plate, camera_id=self.camera_id, location=self.location, gps_coords=self.gps_coords, captured_at=datetime.datetime.now().astimezone().isoformat(), confidence=round(float(v_rec.final_confidence) * 100, 1), plate_img=p_crop, vehicle_img=v_crop, passage_id=passage_key, min_cooldown_seconds=4.0, district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
+                            if v_rec and getattr(v_rec, 'live_observation_count', 0) >= 3 and (not getattr(v_rec, 'logged_fallback', False)) and not v_rec.final_plate:
+                                passage_key = f'{self.passage_session_id}_{v_rec.vehicle_id}'
+                                ad['passage_key'] = passage_key
+                                ad['vehicle_id'] = getattr(v_rec, 'vehicle_id', None)
+                                ad['plate_number'] = 'UNREADABLE'
+                                vx1, vy1, vx2, vy2 = ad.get('bbox', (0, 0, frame_w, frame_h))
+                                v_crop = getattr(v_rec, 'best_vehicle_crop', None)
+                                if v_crop is None or getattr(v_crop, 'size', 0) == 0:
+                                    v_crop = ai_frame[max(0, vy1):min(frame_h, vy2), max(0, vx1):min(frame_w, vx2)]
+                                if self.captured_db and v_crop is not None and (getattr(v_crop, 'size', 0) > 0):
+                                    fb_cid = self.captured_db.add_capture(plate_number='UNREADABLE', display_plate='UNREADABLE', confidence=0.0, plate_img=None, vehicle_img=v_crop, annotated_img=ai_frame, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=False, format_type='unreadable', quality_gate_passed=False, quality_reason='Live Stream Unreadable Vehicle', is_fallback=True, track_id=tid, vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
+                                    if fb_cid and fb_cid > 0:
+                                        with self._lock:
+                                            self.passage_captures[passage_key] = fb_cid
+                                            self.passage_confidences[passage_key] = 0.0
+                                            v_rec.logged_fallback = True
                             new_displays.append(ad)
                     except Exception as e:
                         print(f'[CameraStreamManager] Error during frame ANPR: {e}')

@@ -18,6 +18,7 @@ or model switch::
 from __future__ import annotations
 
 import argparse
+import contextlib
 import base64
 import json
 import os
@@ -29,6 +30,9 @@ from typing import Any, Dict, List, Optional
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
+
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import cv2
 import numpy as np
@@ -184,9 +188,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Pre-warm default model
     try:
-        mgr.get_engine(args.default_model)
+        with contextlib.redirect_stdout(sys.stderr):
+            mgr.get_engine(args.default_model)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
+        emit({"event": "error", "message": f"OCR initialization failed: {exc}"})
+        return 1
 
     emit({
         "event": "ready",

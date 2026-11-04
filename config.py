@@ -24,7 +24,7 @@ def find_model_path(*relative_candidates: str) -> str:
     return str(MODELS_DIR / relative_candidates[0])
 
 # Primary model paths with automatic flat/nested directory structure adaptation (Strictly pure YOLO, no OpenVINO)
-VEHICLE_MODEL_PATH = find_model_path("yolo/yolo26n.pt", "yolo26n.pt", "yolo/yolo11n.pt", "yolo11n.pt", "yolo/yolo11s.pt", "yolo11s.pt")
+VEHICLE_MODEL_PATH = find_model_path("yolo/uvh26_yolo11x.pt", "yolo/yolo26n.pt", "yolo26n.pt", "yolo/yolo11n.pt", "yolo11n.pt", "yolo/yolo11s.pt", "yolo11s.pt")
 PLATE_MODEL_PATH = find_model_path("yolo/plate_yolo_l.pt", "plate_yolo_l.pt", "yolo/tanish_yolo11s_plate.pt", "tanish_yolo11s_plate.pt", "yolo/yolov8_plate.pt", "yolov8_plate.pt")
 AWIROS_WEIGHTS_PATH = find_model_path("awiros_anpr/model.safetensors", "model.safetensors")
 AWIROS_DICT_PATH = find_model_path("awiros_anpr/en_dict.txt", "awiros_anpr/PaddleOCR/ppocr/utils/dict/en_dict.txt")
@@ -150,7 +150,7 @@ class ANPRConfig:
     plate_conf: float = 0.35
 
     # OCR Recognition Models (PaddleOCR PP-OCRv4 Server, Awiros, Mobile, EasyOCR)
-    ocr_model: str = "paddleocr_v4_server"
+    ocr_model: str = "awiros_anpr"
     awiros_python: str = DEFAULT_AWIROS_PYTHON
     awiros_weights: str = AWIROS_WEIGHTS_PATH
     awiros_dict: str = AWIROS_DICT_PATH

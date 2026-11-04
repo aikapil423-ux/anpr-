@@ -27,6 +27,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+# Windows venvs need their local Visual C++ runtime on the DLL search path.
+_RUNTIME_DLL_DIR = None
+if os.name == "nt" and hasattr(os, "add_dll_directory"):
+    runtime_dir = Path(sys.executable).parent
+    if (runtime_dir / "msvcp140.dll").is_file():
+        _RUNTIME_DLL_DIR = os.add_dll_directory(str(runtime_dir))
+
 import cv2
 import numpy as np
 

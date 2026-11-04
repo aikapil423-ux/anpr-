@@ -1,0 +1,17 @@
+# Dedicated OCR environment: py -3.11 -m venv ocr_env/venv
+# ocr_env/venv/Scripts/python -m pip install -r requirements-ocr.txt
+paddlepaddle==3.2.2
+numpy==1.26.4
+opencv-python-headless==4.11.0.86
+safetensors==0.8.0
+PyYAML
+scipy
+pillow
+shapely
+pyclipper==1.3.0.post6
+scikit-image
+lmdb
+requests
+tqdm
+rapidfuzz
+msvc-runtime==14.44.35112; sys_platform == "win32"

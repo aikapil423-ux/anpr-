@@ -1,4 +1,15 @@
 /* Presentation only: existing controls, IDs, handlers and values are retained. */
+/* Keep optional setup out of the main task flow. */
+.ui-simple #uploadModeToggleGroup,.ui-simple #simplePipelineInfoChip,
+.ui-simple .presets-pill-group,.ui-simple .model-badge-duty{display:none!important}
+.ui-simple #unifiedUploadDropzone{box-shadow:none!important;border-style:solid!important}
+.ui-simple #unifiedUploadDropzone button,.ui-simple #btnStartBatchAnalysis{box-shadow:none!important}
+.ui-simple #uiUploadVideoSettings[hidden]{display:none!important}
+.ui-simple #uiUploadVideoSettings{margin:12px 0; width:100%;text-align:left}
+.ui-simple #uiUploadVideoSettings #videoSpecificControlsBox{margin:0!important;border:0!important;border-radius:0!important}
+.ui-simple .vtr-toolbar{flex-wrap:wrap;gap:8px}
+.ui-simple .vtr-toolbar input{min-width:200px;flex:1}
+.ui-simple .vtr-actions{gap:12px;flex-wrap:wrap}
 body.ui-simple{--bg-main:#f4f7fb;--bg-card:#ffffff;--border-color:#cbd5e1;--text-muted:#64748b;--text-secondary:#475569}
 .ui-simple .main-content{padding:0 20px;max-width:1600px}
 .ui-simple .panel-card{box-shadow:none!important;border-color:var(--border-color)!important;border-radius:12px!important}

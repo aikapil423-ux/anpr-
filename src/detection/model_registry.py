@@ -13,6 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 YOLO_MODELS_DIR = BASE_DIR / 'models' / 'yolo'
 ACTIVE_MODELS_FILE = BASE_DIR / 'data' / 'active_models.json'
 CUSTOM_NAMES_FILE = BASE_DIR / 'data' / 'custom_model_names.json'
+# Temporary product policy: keep Live and Upload on the approved ANPR stack.
+MODEL_SELECTION_LOCKED = True
 VEHICLE_MODELS: Dict[str, Dict[str, Any]] = {
     'uvh26_yolo11x': {
         'id': 'uvh26_yolo11x',
@@ -73,6 +75,9 @@ class ModelRegistry:
         self._person_support_cache: Dict[str, bool] = {}
         YOLO_MODELS_DIR.mkdir(parents=True, exist_ok=True)
         self._load_state()
+        if MODEL_SELECTION_LOCKED:
+            self.live_models = dict(FACTORY_DEFAULTS['live'])
+            self.upload_models = dict(FACTORY_DEFAULTS['upload'])
 
     @property
     def active_vehicle_id(self) -> str:
@@ -313,6 +318,12 @@ class ModelRegistry:
         with self._lock:
             target_clean = 'upload' if str(target).strip().lower() == 'upload' else 'live'
             target_dict = self.upload_models if target_clean == 'upload' else self.live_models
+            if MODEL_SELECTION_LOCKED:
+                target_dict.update(FACTORY_DEFAULTS[target_clean])
+                vehicle_id = target_dict['vehicle']
+                plate_id = target_dict['plate']
+                person_id = target_dict['person']
+                ocr_id = target_dict['ocr']
             if vehicle_id and vehicle_id in VEHICLE_MODELS:
                 target_dict['vehicle'] = vehicle_id
             if plate_id and plate_id in PLATE_MODELS:

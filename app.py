@@ -46,6 +46,7 @@ if hasattr(torch, 'set_num_threads'):
         pass
 from config import ANPRConfig
 from src.pipeline.anpr_pipeline import ANPRPipeline
+from src.pipeline.video_sampling import VideoFrameSampler
 from src.identity.vehicle_identity import VehicleRecord
 from src.ocr.enhancer import PlateEnhancer
 from src.database.vehicle_db import VehicleDB
@@ -483,17 +484,8 @@ def run_video_processing(video_path: str, target_fps: int=5, operator_username: 
         raw_fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
         fps = raw_fps if raw_fps > 0 else 25.0
         p_state['total_frames'] = total_frames
-        try:
-            fps_val = int(target_fps)
-        except Exception:
-            fps_val = 5
-        if fps_val <= 0:
-            frame_stride = 1
-            out_fps = fps
-        else:
-            valid_fps = fps_val if fps_val in [5, 10, 20] else 5
-            frame_stride = max(1, round(fps / float(valid_fps)))
-            out_fps = float(valid_fps)
+        sampler = VideoFrameSampler(fps, target_fps)
+        out_fps = sampler.output_fps
         if save_annotated:
             orig_filename = os.path.basename(video_path)
             base_name, _ = os.path.splitext(orig_filename)
@@ -506,22 +498,16 @@ def run_video_processing(video_path: str, target_fps: int=5, operator_username: 
             video_writer = cv2.VideoWriter(raw_video_path, fourcc, out_fps, (writer_w, writer_h))
         pipeline = get_upload_anpr_pipeline()
         pipeline.reset_state()
-        base_stride = frame_stride
-        current_stride = base_stride
-        last_processed_idx = -1
         frame_idx = 0
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
             frame_idx += 1
-            if last_processed_idx >= 0 and frame_idx - last_processed_idx < current_stride and (frame_idx != total_frames):
+            if not sampler.includes(frame_idx):
                 continue
-            last_processed_idx = frame_idx
             timestamp = frame_idx / fps
             active_displays = pipeline.process_frame(frame, frame_idx=frame_idx, timestamp=timestamp, sync=True)
-            has_active_targets = any((d.get('is_analyzing') or (not d.get('is_verified') and bool(d.get('candidate_plate') or d.get('plate_bbox'))) for d in active_displays))
-            current_stride = max(1, base_stride // 2) if has_active_targets else base_stride
             if save_annotated and video_writer is not None and video_writer.isOpened():
                 annotated_frame = annotate_anpr_frame(frame, active_displays)
                 if (writer_w, writer_h) != (annotated_frame.shape[1], annotated_frame.shape[0]):
@@ -1742,6 +1728,12 @@ def select_pipeline_models(
         target=target_clean
     )
 
+    # Apply the registry's approved selection, including the temporary model lock.
+    vehicle_model = updated['active_vehicle']
+    plate_model = updated['active_plate']
+    person_model = updated['active_person']
+    ocr_model = updated['active_ocr']
+
     if target_clean == "live":
         try:
             pipeline = get_anpr_pipeline()
@@ -2245,18 +2237,9 @@ def _process_unified_video_sync(contents: bytes, filename: str, target_fps: int=
         out_fn = None
         out_path = None
         writer = None
-        try:
-            fps_val = int(target_fps)
-        except Exception:
-            fps_val = 5
-        if fps_val <= 0:
-            stride = 1
-            out_fps = fps
-        else:
-            valid_fps = fps_val if fps_val in [5, 10, 20] else 5
-            stride = max(1, round(fps / float(valid_fps)))
-            out_fps = float(valid_fps)
-        sampled_total = total_frames // stride + (1 if total_frames % stride != 0 else 0)
+        sampler = VideoFrameSampler(fps, target_fps)
+        out_fps = sampler.output_fps
+        sampled_total = sampler.count(total_frames)
         sampled_total = max(1, sampled_total)
         if save_annotated:
             out_fn = f'unified_out_{int(time.time())}.mp4'
@@ -2287,17 +2270,13 @@ def _process_unified_video_sync(contents: bytes, filename: str, target_fps: int=
         anpr.reset_state()
         dedicated_pm = None
         veh_supports_person = False
-        base_stride = stride
-        current_stride = base_stride
-        last_processed_idx = -1
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
             frame_idx += 1
-            if base_stride > 1 and last_processed_idx >= 0 and (frame_idx - last_processed_idx < current_stride) and (frame_idx != total_frames):
+            if not sampler.includes(frame_idx):
                 continue
-            last_processed_idx = frame_idx
             processed_sampled_count += 1
             if task_id:
                 raw_pct = frame_idx / max(1, total_frames) * 87.0
@@ -2310,10 +2289,6 @@ def _process_unified_video_sync(contents: bytes, filename: str, target_fps: int=
             active_veh_displays = []
             if anpr:
                 active_veh_displays = anpr.process_frame(frame, frame_idx=frame_idx, timestamp=frame_idx / max(1.0, fps), sync=True)
-                has_active_targets = any((v.get('is_analyzing') or (not v.get('is_verified') and bool(v.get('candidate_plate') or v.get('plate_bbox'))) for v in active_veh_displays))
-                current_stride = max(1, base_stride // 2) if has_active_targets and base_stride > 1 else base_stride
-            else:
-                current_stride = base_stride
             f_events = []
             p_dets = []
             layers = {'vehicle_box': True, 'plate_box': True, 'ocr_text': True, 'person_box': False, 'people_counter': True}
@@ -2446,8 +2421,10 @@ def _process_unified_video_sync(contents: bytes, filename: str, target_fps: int=
         cap.release()
         cleanup_file_safely(in_path)
 
+_background_upload_lock = asyncio.Lock()
+
 @app.post('/api/unified/upload')
-async def unified_upload_and_test(request: Request, file: UploadFile=File(...), fps: int=Form(5), task_id: Optional[str]=Form(None), save_annotated_video: str=Form('true'), target: Optional[str]=Form(None), location: Optional[str]=Form(None), gps_coords: Optional[str]=Form(None), captured_at: Optional[str]=Form(None), registered_camera_id: Optional[str]=Form(None)):
+async def unified_upload_and_test(request: Request, file: UploadFile=File(...), fps: int=Form(5), task_id: Optional[str]=Form(None), save_annotated_video: str=Form('true'), target: Optional[str]=Form(None), location: Optional[str]=Form(None), gps_coords: Optional[str]=Form(None), captured_at: Optional[str]=Form(None), registered_camera_id: Optional[str]=Form(None), background: bool=Form(False), background_tasks: BackgroundTasks=None):
     if registered_camera_id:
         selected_camera = resolve_camera(registered_camera_id)
         if not selected_camera:
@@ -2458,6 +2435,26 @@ async def unified_upload_and_test(request: Request, file: UploadFile=File(...), 
             target = request.query_params.get('target') or 'both'
         save_annotated = str(save_annotated_video).strip().lower() in ('true', '1', 'yes', 'on')
         user = get_current_user_optional(request)
+        if background:
+            task_id = task_id or uuid.uuid4().hex
+            # Own the bytes: FastAPI closes the request upload after returning 202.
+            media = await file.read()
+            detached = UploadFile(filename=file.filename, file=io.BytesIO(media), headers=file.headers)
+            update_upload_progress(task_id, {'task_id': task_id, 'status': 'queued', 'pct': 0, 'status_text': 'Queued for analysis'})
+            async def process_upload():
+                context_token = current_user_cv.set(user)
+                try:
+                    async with _background_upload_lock:
+                        result = await _handle_unified_upload_impl(detached, target_fps=fps, user=user, task_id=task_id, save_annotated=save_annotated, target=target, location=location, gps_coords=gps_coords, captured_at=captured_at)
+                        update_upload_progress(task_id, {'status': 'completed', 'pct': 100, 'status_text': 'Analysis complete', 'result': result})
+                except Exception as exc:
+                    logger.exception('Background upload failed')
+                    update_upload_progress(task_id, {'status': 'error', 'status_text': str(exc), 'pct': 100})
+                finally:
+                    await detached.close()
+                    current_user_cv.reset(context_token)
+            background_tasks.add_task(process_upload)
+            return JSONResponse({'task_id': task_id, 'status': 'queued'}, status_code=202)
         return await _handle_unified_upload_impl(file, target_fps=fps, user=user, task_id=task_id, save_annotated=save_annotated, target=target, location=location, gps_coords=gps_coords, captured_at=captured_at)
     except HTTPException:
         raise

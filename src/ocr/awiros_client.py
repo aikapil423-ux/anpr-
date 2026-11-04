@@ -110,12 +110,15 @@ class AwirosOCRClient:
 
         print(f"[AwirosOCRClient] 'paddle' missing in {self.python_exe}. Auto-installing...")
         try:
-            subprocess.run(
+            install = subprocess.run(
                 [self.python_exe, "-m", "pip", "install", "--no-cache-dir", "paddlepaddle>=2.6.0"],
                 capture_output=True,
                 text=True,
                 timeout=300
             )
+            if install.returncode != 0:
+                self.last_error = "PaddlePaddle installation failed: " + install.stderr[-1500:]
+                return False
             print("[AwirosOCRClient] Auto-install completed!")
             return True
         except Exception as e:
@@ -136,7 +139,10 @@ class AwirosOCRClient:
         if self.process is not None and self.process.poll() is None:
             return True
 
-        self._ensure_worker_environment()
+        if not self._ensure_worker_environment():
+            if not self.last_error:
+                self.last_error = f"PaddlePaddle unavailable in OCR interpreter: {self.python_exe}"
+            return False
         if not self.is_available():
             self.last_error = f"Worker python interpreter not found: {self.python_exe}"
             print(f"[AwirosOCRClient] {self.last_error}")

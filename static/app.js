@@ -1,3 +1,12 @@
+// Display policy only; keep the complete evidence and stored detections intact.
+window.isVisibleVehicleDetection = function (vehicle) {
+  if (!vehicle) return false;
+  const raw = vehicle.confidence ?? vehicle.final_confidence ?? vehicle.ocr_confidence;
+  if (raw === null || raw === undefined || raw === '') return false;
+  let confidence = Number(raw);
+  if (vehicle.confidence == null && vehicle.final_confidence != null && confidence <= 1) confidence *= 100;
+  return Number.isFinite(confidence) && confidence > 80;
+};
 document.addEventListener('DOMContentLoaded', () => {
  let isFetchingUnifiedLiveFeed = false;
   const navDashboardBtn = document.getElementById('navDashboardBtn');
@@ -1040,6 +1049,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
   }
   function showAnprPhotoInspection(data, originalFileName) {
+    const detections = (data.detections || []).filter(window.isVisibleVehicleDetection);
+    data = {...data, detections, detections_count: detections.length};
     const viewport = document.getElementById('anprInspectionViewport');
     const content = document.getElementById('anprInspectionContent');
     const badge = document.getElementById('anprInspectionTypeBadge');
@@ -1072,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                    No vehicle plate detected with confidence &ge; 60%.
+                    No vehicle plate detected with confidence above 80%.
 
 
 
@@ -1254,6 +1265,9 @@ document.addEventListener('DOMContentLoaded', () => {
     viewport.style.display = 'block';
   }
   function showAnprVideoInspection(results) {
+    results = {...results, vehicles: (results.vehicles || []).filter(window.isVisibleVehicleDetection)};
+    if (results.verified_vehicles) results.verified_vehicles = results.verified_vehicles.filter(window.isVisibleVehicleDetection);
+    if (results.needs_review) results.needs_review = results.needs_review.filter(window.isVisibleVehicleDetection);
     const viewport = document.getElementById('anprInspectionViewport');
     const content = document.getElementById('anprInspectionContent');
     const badge = document.getElementById('anprInspectionTypeBadge');
@@ -1270,21 +1284,21 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.style.color = "#818cf8";
     }
     const stats = results.stats || ({});
-    const verifiedVehicles = results.verified_vehicles || [];
+    const verifiedVehicles = results.verified_vehicles || (results.vehicles || []).filter(v => v.is_verified);
     const verifiedCount = verifiedVehicles.length;
-    const reviewCount = (results.needs_review || []).length;
-    if (subtext) subtext.innerText = `${verifiedCount} verified plate(s) &bull; ${stats.total_bytetrack_ids || 0} tracks tracked`;
+    const reviewCount = (results.needs_review || (results.vehicles || []).filter(v => !v.is_verified)).length;
+    if (subtext) subtext.innerText = `${stats.total_vehicles ?? (results.vehicles || []).length} vehicle(s) • ${verifiedCount} verified plate(s) • ${reviewCount} need review`;
     if (dlBtn) {
-      if (results.annotated_video_filename && results.annotated_video_url) {
+      if (results.annotated_video_url || results.output_video_url) {
         dlBtn.style.display = 'inline-flex';
         if (dlText) dlText.innerText = "Download Annotated Video";
-        dlBtn.href = results.download_url || results.annotated_video_url || '#';
-        dlBtn.setAttribute('download', results.annotated_video_filename);
+        dlBtn.href = results.download_url || results.annotated_video_url || results.output_video_url;
+        dlBtn.setAttribute('download', results.annotated_video_filename || 'annotated-video.mp4');
       } else {
         dlBtn.style.display = 'none';
       }
     }
-    const videoUrl = results.annotated_video_url;
+    const videoUrl = results.annotated_video_url || results.output_video_url;
     let verifiedPlatesHtml = '';
     if (verifiedVehicles.length > 0) {
       verifiedPlatesHtml = `
@@ -1327,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                                <span style="font-size: 0.875rem; color: #10b981; font-weight: 600;">${v.final_confidence}%</span>
+                                <span style="font-size: 0.875rem; color: #10b981; font-weight: 600;">${v.final_confidence ?? v.confidence ?? 0}%</span>
 
 
 
@@ -1742,6 +1756,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   window.startSmoothProgressTicker = startSmoothProgressTicker;
   window.finishSmoothProgressTicker = finishSmoothProgressTicker;
+  window.showAnprPhotoInspection = showAnprPhotoInspection;
+  window.showAnprVideoInspection = showAnprVideoInspection;
   window.showProgress = showProgress;
   window.hideProgress = hideProgress;
   function startPolling() {
@@ -2224,9 +2240,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const res = await fetch(url);
       const data = await res.json();
-      const items = data.captured || [];
+      const items = (data.captured || []).filter(window.isVisibleVehicleDetection);
       if (capturedCountBadge) {
-        capturedCountBadge.innerText = `${data.total_count || items.length} / 100 Captures`;
+        capturedCountBadge.innerText = `${items.length} Captures · >80%`;
       }
       if (items.length === 0) {
         if (capturedListContainer.dataset.lastSig !== 'empty') {
@@ -9560,7 +9576,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const ddEl = document.getElementById(ddId);
       if (!selEl || !labelEl || !ddEl) return;
       const val = selEl.value;
-      labelEl.textContent = categoryTitle;
+      labelEl.textContent = selEl.selectedOptions[0]?.textContent || categoryTitle;
+      selEl.disabled = true;
+      const button = ddEl.querySelector('.custom-model-dd-btn');
+      if (button) {
+        button.disabled = true;
+        button.title = 'Preselected model for Live and Upload';
+        button.style.maxWidth = 'none';
+      }
       ddEl.querySelectorAll('.custom-model-dd-item').forEach(item => {
         if (item.getAttribute('data-id') === val) {
           item.classList.add('selected');
@@ -9737,7 +9760,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selPersonModel.value = data.active_person;
       }
       syncPersonModelWithVehicle(data.active_vehicle);
-      null;
+      updateModelStatusBadge(data.active_vehicle, data.active_plate, data.active_ocr, data.active_person, null, null, data.active_vehicle_supports_person, target);
       syncCustomDropdownUI();
     } catch (err) {
       console.error("Error loading model catalog:", err);
@@ -9747,6 +9770,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const summary = `${String(target).toUpperCase()} ANPR: ${veh || 'Vehicle'} + ${plt || 'Plate'} [OCR: ${ocr || 'PaddleOCR'}]`;
     const el = document.getElementById('liveModelStatusBadge');
     if (el) el.textContent = summary;
+    if (modelStatusText) modelStatusText.textContent = summary;
     window.activePipelineModels = {
       vehicle: veh,
       plate: plt,
@@ -9756,57 +9780,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
   window.handleModelSelectionChange = async function () {
-    const vehicle = selVehicleModel ? selVehicleModel.value : null;
-    if (vehicle) {
-      syncPersonModelWithVehicle(vehicle);
-    }
-    const plate = selPlateModel ? selPlateModel.value : null;
-    const ocr = selOcrModel ? selOcrModel.value : null;
-    const person = selPersonModel ? selPersonModel.value : null;
-    const target = window.currentModelTarget || 'live';
-    if (modelStatusText) {
-      modelStatusText.innerText = `Switching ${target.toUpperCase()} AI Pipeline Models...`;
-    }
-    try {
-      const fd = new FormData();
-      fd.append('target', target);
-      if (vehicle) fd.append('vehicle_model', vehicle);
-      if (plate) fd.append('plate_model', plate);
-      if (ocr) fd.append('ocr_model', ocr);
-      if (person) fd.append('person_model', person);
-      const res = await fetch('/api/models/select', {
-        method: 'POST',
-        body: fd
-      });
-      const data = await res.json();
-      if (res.ok) {
-        syncPersonModelWithVehicle(data.active_vehicle);
-        null;
-        syncCustomDropdownUI();
-        if (data.status === 'warning') {
-          if (typeof showToastAlert === 'function') {
-            showToastAlert(data.message || 'Model checkpoint missing, falling back to active detector.', 'warning');
-          }
-        } else if (data.status === 'success') {}
-      } else {
-        showToastAlert("Failed to switch models: " + (data.detail || "Error"), "error", "Model Switch Error");
-      }
-    } catch (e) {
-      console.error("Error switching models:", e);
-    }
+    // Model selection is fixed for both scopes until model switching is enabled.
+    if (selVehicleModel) selVehicleModel.value = 'uvh26_yolo11x';
+    if (selPlateModel) selPlateModel.value = 'plate_yolo_l';
+    if (selOcrModel) selOcrModel.value = 'awiros_anpr';
+    if (selPersonModel) selPersonModel.value = 'uvh26_yolo11x';
     syncCustomDropdownUI();
+    return;
   };
   window.applyQuickPipelinePreset = function (presetType) {
-    if (presetType === 'fast') {
-      if (selVehicleModel) selVehicleModel.value = 'yolo11n';
-      if (selPlateModel) selPlateModel.value = 'plate_yolo_l';
-      if (selOcrModel) selOcrModel.value = 'paddleocr_v4_server';
-      if (selPersonModel) selPersonModel.value = 'yolo11n';
-    } else if (presetType === 'sota') {
+    if (presetType === 'fast' || presetType === 'sota') {
       if (selVehicleModel) selVehicleModel.value = 'uvh26_yolo11x';
       if (selPlateModel) selPlateModel.value = 'plate_yolo_l';
-      if (selOcrModel) selOcrModel.value = 'paddleocr_v4_server';
-      if (selPersonModel) selPersonModel.value = 'driveindia_tihan_yolov10x';
+      if (selOcrModel) selOcrModel.value = 'awiros_anpr';
+      if (selPersonModel) selPersonModel.value = 'uvh26_yolo11x';
     }
     return window.handleModelSelectionChange();
   };
@@ -10430,6 +10417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
   }
   function renderFreshVehicles(vehicles, mode = 'live') {
+    vehicles = (vehicles || []).filter(window.isVisibleVehicleDetection);
     window._freshVehiclesCache = window._freshVehiclesCache || new Map();
     if (Array.isArray(vehicles)) {
       vehicles.forEach(v => {
@@ -10522,10 +10510,11 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('save_annotated_video', chkSave ? chkSave.checked ? 'true' : 'false' : 'true');
       formData.append('target', currentTarget);
       const selectedCamera = window.karnalCameraRegistry?.getSelectedUploadCamera(options);
-      if (!selectedCamera) throw new Error('Select the actual Karnal camera before analyzing this file.');
-      formData.append('registered_camera_id', selectedCamera.id);
-      formData.append('location', selectedCamera.name);
-      formData.append('gps_coords', `${selectedCamera.lat}, ${selectedCamera.lng}`);
+      if (selectedCamera) {
+        formData.append('registered_camera_id', selectedCamera.id);
+        formData.append('location', selectedCamera.name);
+        formData.append('gps_coords', `${selectedCamera.lat}, ${selectedCamera.lng}`);
+      }
       if (options && options.capturedAt) formData.append('captured_at', options.capturedAt);
       const res = await fetch(`/api/unified/upload?target=${encodeURIComponent(currentTarget)}`, {
         method: 'POST',
@@ -10590,7 +10579,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       let vehiclesHtml = '';
       if (data.vehicles && data.vehicles.length > 0) {
-        vehiclesHtml = data.vehicles.map((v, idx) => {
+        vehiclesHtml = data.vehicles.filter(window.isVisibleVehicleDetection).map((v, idx) => {
           const plate = escapeHtml(v.display_plate || v.final_plate || 'UNREADABLE');
           const conf = v.confidence || 0;
           const isHit = v.is_hotlist_hit;
@@ -11572,7 +11561,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const footerId = document.getElementById('reportModalFooterId');
     if (footerId) footerId.innerText = `Audit Reference: ${item.search_id} • Status: ${item.status || 'VERIFIED'}`;
     if (!body) return;
-    const vehicles = item.vehicles || [];
+    const vehicles = (item.vehicles || []).filter(window.isVisibleVehicleDetection);
     const hasHits = (item.hotlist_hits || 0) > 0;
     let vehiclesTableHtml = '';
     if (vehicles.length > 0) {
@@ -12152,8 +12141,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedOp && selectedOp !== 'ALL') url += `&operator=${encodeURIComponent(selectedOp)}`;
       const res = await fetch(url);
       const data = await res.json();
-      const items = data.vehicles || [];
-      const totalCount = data.total_count !== undefined ? data.total_count : items.length;
+      const items = (data.vehicles || []).filter(window.isVisibleVehicleDetection);
+      const totalCount = items.length;
       const navBadge = document.getElementById('navDrawerVehiclesCount');
       if (navBadge) navBadge.innerText = totalCount;
       const btnBadge = document.getElementById('btnVehiclesCountBadge');
@@ -17632,7 +17621,7 @@ window.addFilesToBatchQueue = function (files) {
   const pad = n => String(n).padStart(2, '0');
   const defaultIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
   files.forEach((f, idx) => {
-    const preset = {name:'Select Karnal camera',lat:null,lng:null};
+    const preset = {name:'Uploaded media',lat:null,lng:null};
     let capturedAt = defaultIso;
     const nameMatch = f.name.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})[-_]?(\d{2})[-_]?(\d{2})/);
     if (nameMatch) {
@@ -17643,8 +17632,8 @@ window.addFilesToBatchQueue = function (files) {
     const defaultCam = (window.karnalCameraRegistry && typeof window.karnalCameraRegistry.getDefaultCamera === 'function') ? window.karnalCameraRegistry.getDefaultCamera() : null;
     const initialCamId = defaultCam ? defaultCam.id : (preset.name === 'Namastey Chowk 1' ? 'KNL-ICCC-036-C01' : null);
     const initialLocName = defaultCam ? defaultCam.name : (preset.name || 'Namastey Chowk 1');
-    const initialLat = defaultCam ? defaultCam.lat : (preset.lat || 29.66839);
-    const initialLng = defaultCam ? defaultCam.lng : (preset.lng || 76.9913);
+    const initialLat = defaultCam ? defaultCam.lat : null;
+    const initialLng = defaultCam ? defaultCam.lng : null;
     window.batchUploadQueue.push({
       id: 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       file: f,
@@ -17697,7 +17686,7 @@ window.renderBatchQueueUI = function () {
     } else if (item.status === 'completed') {
       statusHtml = '<span style="color:#10b981; font-size:0.875rem; font-weight:700;">Analyzed ✓</span>';
     } else if (item.status === 'error') {
-      statusHtml = '<span style="color:#ef4444; font-size:0.875rem; font-weight:700;">Failed ✕</span>';
+      statusHtml = '<span style="color:#ef4444; font-size:0.875rem; font-weight:700;">Failed ✕' + (item.error ? '<br><small>' + escapeHtml(item.error) + '</small>' : '') + '</span>';
     }
     return `
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; background:rgba(241,245,249,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:8px; flex-wrap:wrap;">
@@ -17867,7 +17856,6 @@ window.formatEvidenceImageSrc = function (src, fallback = '/static/benchmark_sam
   return '/' + src;
 };
 window.startBatchAnalysis = async function () {
-  if(window.batchUploadQueue.some(item=>!item.cameraId)){alert('Select the actual Karnal camera for every file before analysis.');return;}
   if (window.batchUploadQueue.length === 0) {
     if (typeof showToastAlert === 'function') showToastAlert("Please add at least one photo or video to analyze.", "warning");
     return;
@@ -17875,22 +17863,23 @@ window.startBatchAnalysis = async function () {
   const btnStart = document.getElementById('btnStartBatchAnalysis');
   if (btnStart) {
     btnStart.disabled = true;
-    btnStart.innerText = "Processing Batch...";
+    btnStart.innerText = "Analyzing files...";
   }
   window.recentUploadBatchDetections = [];
   const total = window.batchUploadQueue.length;
   for (let i = 0; i < total; i++) {
     const item = window.batchUploadQueue[i];
     item.status = 'processing';
+    item.error = '';
     window.renderBatchQueueUI();
     showProgress(`Processing file ${i + 1} of ${total}: ${item.name}...`, Math.round(i / total * 100), `Batch: ${i + 1}/${total}`);
     try {
       const formData = new FormData();
       formData.append('file', item.file);
       formData.append('fps', window.selectedUploadFps !== undefined ? window.selectedUploadFps : 5);
-      formData.append('save_annotated_video', 'true');
+      formData.append('save_annotated_video', document.getElementById('chkSaveAnnotatedVideo')?.checked === false ? 'false' : 'true');
       formData.append('location', item.locationName);
-      formData.append('registered_camera_id', item.cameraId);
+      if (item.cameraId) formData.append('registered_camera_id', item.cameraId);
       formData.append('gps_coords', item.lat && item.lng ? `${item.lat},${item.lng}` : '');
       formData.append('captured_at', item.capturedAt || '');
       const targetRadio = document.querySelector('input[name="investigationTarget"]:checked');
@@ -17898,6 +17887,7 @@ window.startBatchAnalysis = async function () {
       formData.append('target', currentTarget);
       const taskId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       formData.append('task_id', taskId);
+      formData.append('background', 'true');
       let batchPollTimer = null;
       let isBatchItemDone = false;
       batchPollTimer = setInterval(async () => {
@@ -17906,12 +17896,13 @@ window.startBatchAnalysis = async function () {
           const pRes = await fetch('/api/unified/upload-progress?task_id=' + encodeURIComponent(taskId));
           if (pRes.ok) {
             const pData = await pRes.json();
+            if (isBatchItemDone) return;
             if (pData && pData.status && pData.status !== 'waiting') {
               const currF = pData.current_frame || 0;
               const totalF = Math.max(pData.total_frames || 0, currF);
               const framesLabel = totalF > 0 ? ('Frames: ' + currF + ' / ' + totalF) : ('Frames: ' + currF);
               const pctOverall = Math.round((i / total) * 100 + (pData.pct || 0) / total);
-              showProgress(item.name + ': ' + (pData.message || 'Analyzing...'), pctOverall, framesLabel);
+              showProgress(item.name + ': ' + (pData.status_text || pData.message || 'Analyzing...'), pctOverall, framesLabel);
             }
           }
         } catch (_) {}
@@ -17923,6 +17914,30 @@ window.startBatchAnalysis = async function () {
           method: 'POST',
           body: formData
         });
+        if (res.status === 202) {
+          const accepted = await res.json();
+          const deadline = Date.now() + 60 * 60 * 1000;
+          let failures = 0;
+          while (true) {
+            if (Date.now() > deadline) throw new Error('Analysis timed out. Check server status before retrying.');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            let state;
+            try {
+              const poll = await fetch('/api/unified/upload-progress?task_id=' + encodeURIComponent(accepted.task_id));
+              if (!poll.ok) throw new Error('Progress request failed');
+              state = await poll.json();
+              failures = 0;
+            } catch (error) {
+              if (++failures >= 10) throw new Error('Server connection lost. Reconnect and check analysis results before retrying.');
+              continue;
+            }
+            if (state.status === 'error') throw new Error(state.status_text || 'Analysis failed');
+            if (state.status === 'completed' && state.result) {
+              res = {ok: true, json: async () => state.result};
+              break;
+            }
+          }
+        }
       } finally {
         isBatchItemDone = true;
         if (batchPollTimer) {
@@ -17932,6 +17947,7 @@ window.startBatchAnalysis = async function () {
       }
       if (res.ok) {
         const data = await res.json();
+        if (data.success === false) throw new Error(data.error || data.detail || 'Analysis failed');
         item.status = 'completed';
         if (data.vehicles && data.vehicles.length > 0) {
           data.vehicles.forEach(v => {
@@ -17948,10 +17964,15 @@ window.startBatchAnalysis = async function () {
           });
         }
         if (i === total - 1) {
-          if (item.isVideo && typeof showAnprVideoInspection === 'function') {
-            showAnprVideoInspection(data);
-          } else if (!item.isVideo && typeof showAnprPhotoInspection === 'function') {
-            showAnprPhotoInspection(data, item.name);
+          try {
+            if (item.isVideo && typeof showAnprVideoInspection === 'function') {
+              showAnprVideoInspection(data);
+            } else if (!item.isVideo && typeof showAnprPhotoInspection === 'function') {
+              showAnprPhotoInspection(data, item.name);
+            }
+          } catch (displayError) {
+            console.error('Analysis completed; result preview failed:', displayError);
+            if (typeof showToastAlert === 'function') showToastAlert('Analysis completed, but the preview could not be displayed. Results are available below.', 'warning');
           }
         }
       } else {
@@ -17969,6 +17990,7 @@ window.startBatchAnalysis = async function () {
           } catch (e2) {}
         }
         console.error(`Batch item analysis error [${item.name}]:`, errText);
+        item.error = errText;
         if (typeof showToastAlert === 'function') {
           showToastAlert(`Analysis failed for "${item.name}": ${errText}`, "error", "Media Processing Error");
         }
@@ -17976,8 +17998,9 @@ window.startBatchAnalysis = async function () {
     } catch (err) {
       console.error("Batch processing error on file:", item.name, err);
       item.status = 'error';
+      item.error = err.message || String(err);
       if (typeof showToastAlert === 'function') {
-        showToastAlert(`Upload error on "${item.name}": ${err.message || err}`, "error");
+        showToastAlert(`Analysis error on "${item.name}": ${err.message || err}`, "error");
       }
     }
     window.renderBatchQueueUI();
@@ -17985,7 +18008,7 @@ window.startBatchAnalysis = async function () {
   hideProgress();
   if (btnStart) {
     btnStart.disabled = false;
-    btnStart.innerText = "🚀 Start Batch Forensic Analysis";
+    btnStart.innerText = "Analyze files";
   }
   if (typeof fetchAndRenderCapturedDb === 'function') fetchAndRenderCapturedDb();
   if (typeof fetchAndRenderResults === 'function') fetchAndRenderResults();
@@ -18034,15 +18057,15 @@ window.renderRecentUploadResults = function (filterQuery = '') {
   const badge = document.getElementById('recentUploadStatsBadge');
   const pillsContainer = document.getElementById('recentUploadPlatePills');
   if (!sec || !grid) return;
-  const allVehicles = window.recentUploadBatchDetections || [];
+  const allVehicles = (window.recentUploadBatchDetections || []).filter(window.isVisibleVehicleDetection);
   sec.style.display = 'block';
   const qClean = (filterQuery || '').trim().toUpperCase();
   const currentMode = window.currentBatchViewMode || 'all';
-  const linkedPairsCount = allVehicles.filter(v => v.driver_name && v.driver_name.toUpperCase() !== 'UNKNOWN' || null).length || (null).length;
+  const linkedPairsCount = allVehicles.filter(v => v.driver_name && v.driver_name.toUpperCase() !== 'UNKNOWN').length;
   const countAllEl = document.getElementById('batchCountAll');
   const countVehEl = document.getElementById('batchCountVehicles');
   const countPairsEl = document.getElementById('batchCountPairs');
-  if (countAllEl) countAllEl.innerText = allVehicles.length + null;
+  if (countAllEl) countAllEl.innerText = allVehicles.length;
   if (countVehEl) countVehEl.innerText = allVehicles.length;
   if (countPairsEl) countPairsEl.innerText = linkedPairsCount;
   const uniquePlates = [...new Set(allVehicles.map(v => v.plate_number || v.final_plate))].filter(p => p && p !== 'UNREADABLE');
@@ -18085,7 +18108,7 @@ window.renderRecentUploadResults = function (filterQuery = '') {
     return pNum.includes(qClean) || loc.includes(qClean) || fn.includes(qClean) || dName.includes(qClean);
   });
   if (badge) {
-    badge.innerHTML = ``;
+    badge.textContent = `${allVehicles.length} Sightings`;
   }
   let cardsHtml = '';
   if (currentMode === 'all' || currentMode === 'vehicles') {
@@ -18161,7 +18184,7 @@ window.renderRecentUploadResults = function (filterQuery = '') {
             `;
     });
   }
-  grid.innerHTML = cardsHtml;
+  grid.innerHTML = cardsHtml || '<p style="padding:16px;color:#52647c;">' + (allVehicles.length ? 'No detections match this search.' : 'Analysis completed. No vehicles were detected in these files. Try a clearer video or a higher processing FPS.') + '</p>';
   if (qClean && uniquePlates.includes(qClean)) {
     window.renderTacticalRouteMap(qClean);
   }
@@ -18428,7 +18451,7 @@ window.renderSearchActiveRecord = function () {
 
                 <div style="display:flex; gap:10px;">
                     <button type="button" class="btn btn-primary" onclick="window.launchSidebarRouteMapModal('${escapeHtml(queryPlate)}')" style="padding:8px 16px; font-size:0.8825rem; font-weight:700; background:#4f46e5; display:flex; align-items:center; gap:6px;">
-                        <span>🗺️</span> <span>View Tactical Route Map</span>
+                        <span>🗺️</span> <span>View map</span>
                     </button>
                 </div>
             </div>
@@ -18547,7 +18570,7 @@ window.fetchAndRenderUploadSessionsFeed = async function () {
     }
     cont.innerHTML = sessions.map((s, sIdx) => {
       const isFirst = sIdx === 0;
-      const vehList = s.vehicles || [];
+      const vehList = (s.vehicles || []).filter(window.isVisibleVehicleDetection);
       const fileList = s.files || [];
       return `
                 <div class="upload-session-card ${isFirst ? 'expanded' : ''}" id="session_card_${s.session_id}">

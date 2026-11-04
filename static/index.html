@@ -67,7 +67,7 @@
 
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
-<link href="/static/simple-ui.css?v=1" rel="stylesheet"/>
+<link href="/static/simple-ui.css?v=2" rel="stylesheet"/>
 <link href="/static/light-ui.css?v=9" rel="stylesheet"/><link rel="stylesheet" href="/static/vehicle-trail-review.css?v=1">
 </head>
 <body class="ui-light">
@@ -224,32 +224,12 @@
 <span class="nav-label">Captured Vehicles</span>
 <span class="nav-badge" id="navDrawerVehiclesCount" style="background: rgba(245, 158, 11, 0.2); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.875rem;">0</span>
 </button>
-<button class="sidebar-nav-item" id="navViolatorsBtn" onclick="window.switchTab('violators')" title="Triple Riding &amp; Helmet Traffic Violators Database">
-<div class="nav-icon-box" style="color: #92400e;">
-<svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
-</div>
-<span class="nav-label">Traffic Violators</span>
-<span class="nav-badge" id="navViolatorsCountBadge" style="background: rgba(245, 158, 11, 0.2); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.875rem;">0</span>
-</button>
 <button class="sidebar-nav-item" id="navAlertAuditBtn" onclick="window.switchTab('alert-audit')" title="Statewide Emergency Alerts &amp; Chain-of-Custody Audit Log">
 <div class="nav-icon-box" style="color: #ef4444;">
 <svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
 </div>
 <span class="nav-label">Alert Audit Trail</span>
 <span class="nav-badge" id="navAlertAuditCountBadge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.875rem;">0</span>
-</button>
-<button class="sidebar-nav-item" id="navVehicleSearchBtn" onclick="window.switchTab('vehicle-search')" title="Vehicle &amp; Tracking Forensics Search">
-<div class="nav-icon-box" style="color: #6366f1;">
-<svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"></circle><line x1="21" x2="16.65" y1="21" y2="16.65"></line></svg>
-</div>
-<span class="nav-label">Search</span>
-</button>
-<button class="sidebar-nav-item" id="navBenchmarkBtn" onclick="window.openBenchmarkModal()" title="AI Models Latency &amp; Throughput Benchmark">
-<div class="nav-icon-box" style="color: #92400e;">
-<svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-</div>
-<span class="nav-label">System Benchmark</span>
-<span class="nav-badge" id="navBenchmarkBadge" style="background: rgba(245, 158, 11, 0.2); color: #92400e; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.875rem;">⚡ BENCH</span>
 </button>
 </div>
 </div>
@@ -305,24 +285,13 @@
 <!-- ================= GLOBAL AI PIPELINE MODEL ENGINE BAR ================= -->
 <div class="ai-model-engine-bar" id="aiModelEngineBar">
 <div class="ai-model-deck-left" id="aiModelBarLeftDeck">
-<!-- Scope Switcher Pill: Live Feeds vs Upload Media -->
-<div class="model-target-pill-group" id="modelTargetPillGroup">
-<button class="model-target-btn active" id="btnTargetLive" onclick="window.switchModelTarget('live')" title="Configure AI Models for 24x7 Live RTSP Surveillance Streams" type="button">
-<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f8fafc; margin-right: 4px;"></span>
-<span>Live Feeds</span>
-</button>
-<button class="model-target-btn" id="btnTargetUpload" onclick="window.switchModelTarget('upload')" title="Configure AI Models for Uploaded Video &amp; Photo Forensic Inspection" type="button">
-<svg fill="none" height="11" stroke="currentColor" stroke-width="2.5" style="margin-right: 3px;" viewbox="0 0 24 24" width="11"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
-<span>Upload Media</span>
-</button>
-</div>
 <!-- ANPR Cluster -->
 <div class="model-cluster-group model-cluster-anpr" style="display: flex; align-items: center; gap: 6px; background: rgba(241,245,249,0.5); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(129, 140, 248, 0.2);">
 <span class="model-cluster-badge" style="font-size: 0.875rem; font-weight: 800; color: #818cf8; letter-spacing: 0.5px; text-transform: uppercase;">🚗 ANPR</span>
 <!-- 1. Vehicle Model Custom Dropdown -->
 <div class="custom-model-dd" id="customDdVehicle">
-<button class="custom-model-dd-btn" onclick="window.toggleCustomDropdown('customDdVehicle')" style="max-width: 155px;" title="Select Vehicle Detection AI Model" type="button">
-<span class="custom-dd-label" id="labelVehicleModel">Vehicle Detector</span>
+<button class="custom-model-dd-btn" disabled style="max-width: 155px;" title="Select Vehicle Detection AI Model" type="button">
+<span class="custom-dd-label" id="labelVehicleModel">IISc UVH-26</span>
 <svg class="dd-chevron" fill="none" height="10" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24" width="10"><path d="m6 9 6 6 6-6"></path></svg>
 </button>
 <div class="custom-model-dd-menu">
@@ -339,8 +308,8 @@
 </div>
 <!-- 2. Plate Model Custom Dropdown -->
 <div class="custom-model-dd" id="customDdPlate">
-<button class="custom-model-dd-btn" onclick="window.toggleCustomDropdown('customDdPlate')" style="border-color: rgba(16, 185, 129, 0.45); max-width: 150px;" title="Select Plate Detection AI Model" type="button">
-<span class="custom-dd-label" id="labelPlateModel">Plate Detector</span>
+<button class="custom-model-dd-btn" disabled style="border-color: rgba(16, 185, 129, 0.45); max-width: 150px;" title="Select Plate Detection AI Model" type="button">
+<span class="custom-dd-label" id="labelPlateModel">YOLO11l Large CCTV</span>
 <svg class="dd-chevron" fill="none" height="10" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24" width="10"><path d="m6 9 6 6 6-6"></path></svg>
 </button>
 <div class="custom-model-dd-menu" style="border-color: rgba(16, 185, 129, 0.5);">
@@ -357,8 +326,8 @@
 </div>
 <!-- 3. OCR Recognition Model Custom Dropdown -->
 <div class="custom-model-dd" id="customDdOcr">
-<button class="custom-model-dd-btn" onclick="window.toggleCustomDropdown('customDdOcr')" style="border-color: rgba(245, 158, 11, 0.45); max-width: 155px;" title="Select OCR Text Recognition AI Model" type="button">
-<span class="custom-dd-label" id="labelOcrModel">OCR Engine</span>
+<button class="custom-model-dd-btn" disabled style="border-color: rgba(245, 158, 11, 0.45); max-width: 155px;" title="Select OCR Text Recognition AI Model" type="button">
+<span class="custom-dd-label" id="labelOcrModel">Awiros ANPR-OCR</span>
 <svg class="dd-chevron" fill="none" height="10" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24" width="10"><path d="m6 9 6 6 6-6"></path></svg>
 </button>
 <div class="custom-model-dd-menu" style="border-color: rgba(245, 158, 11, 0.5);">
@@ -379,10 +348,10 @@
 <div class="ai-model-deck-right" id="aiModelBarRightDeck">
 <!-- 1-Click Preset Profile Switches -->
 <div class="presets-pill-group" style="display: flex; align-items: center; gap: 4px; background: rgba(241,245,249,0.6); padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
-<button class="btn-preset-pill" id="btnPresetFastPatrol" onclick="window.applyQuickPipelinePreset('fast')" style="padding: 3px 8px; font-size: 0.875rem; font-weight: 700; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15); color: #1d4ed8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="ANPR vehicle and plate processing profile" type="button">
+<button class="btn-preset-pill" id="btnPresetFastPatrol" disabled onclick="window.applyQuickPipelinePreset('fast')" style="padding: 3px 8px; font-size: 0.875rem; font-weight: 700; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15); color: #1d4ed8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="ANPR vehicle and plate processing profile" type="button">
 <span>🚀 Fast Patrol (Default)</span>
 </button>
-<button class="btn-preset-pill" id="btnPresetSotaForensics" onclick="window.applyQuickPipelinePreset('sota')" style="padding: 3px 8px; font-size: 0.875rem; font-weight: 700; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.15); color: #6b21a8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="ANPR vehicle and plate processing profile" type="button">
+<button class="btn-preset-pill" id="btnPresetSotaForensics" disabled onclick="window.applyQuickPipelinePreset('sota')" style="padding: 3px 8px; font-size: 0.875rem; font-weight: 700; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.15); color: #6b21a8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="ANPR vehicle and plate processing profile" type="button">
 <span>🎯 Max Accuracy</span>
 </button>
 </div>
@@ -491,15 +460,7 @@
 </button>
 </div>
 </div>
-<div style="margin-bottom: 18px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
-<span style="font-size: 0.875rem; font-weight: 700; color: #52647c; text-transform: uppercase; letter-spacing: 0.6px;">STEP 2: SELECT DETECTION TARGET</span>
-<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-<label id="lblTargetVehicle" style="display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: rgba(241,245,249,0.6); color: #475569; border: 1px solid rgba(148, 163, 184, 0.3); transition: all 0.15s;">
-<input checked="" name="investigationTarget" onchange="window.setInvestigationTarget('vehicle')" style="accent-color: #fbbf24; cursor: pointer;" type="radio" value="vehicle"/>
-<span>Vehicle Only</span>
-</label>
-</div>
-</div>
+<input checked hidden name="investigationTarget" type="radio" value="vehicle"/>
 <!-- Video Only Options (FPS + Checkbox) -->
 <div id="videoSpecificControlsBox" style="display: none; margin-bottom: 16px; background: rgba(241,245,249,0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 8px 14px; flex-direction: column; align-items: center; gap: 8px;">
 <div class="video-fps-selector-box" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -574,7 +535,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
 <div style="display: flex; align-items: center; gap: 8px;">
 <span style="font-size: 1.1rem;">🗂️</span>
-<span style="font-weight: 700; color: #172033; font-size: 0.9825rem;">Staged Forensic Files Queue</span>
+<span style="font-weight: 700; color: #172033; font-size: 0.9825rem;">Files to analyze</span>
 <span id="batchQueueCountBadge" style="background: rgba(99, 102, 241, 0.25); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.4); padding: 2px 8px; border-radius: 12px; font-size: 0.875rem; font-weight: 700;">0 Files</span>
 </div>
 <div style="display: flex; gap: 8px;">
@@ -596,7 +557,7 @@
                                 💡 <em>Tip: Click <strong>"📍 Location"</strong> to pinpoint camera coordinates on map or select police naka.</em>
 </div>
 <button class="btn btn-primary" id="btnStartBatchAnalysis" onclick="window.startBatchAnalysis()" style="padding: 9px 24px; font-weight: 700; font-size: 0.9425rem; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);" type="button">
-                                🚀 Start Batch Forensic Analysis
+                                Analyze files
                             </button>
 </div>
 </div>
@@ -708,14 +669,14 @@
 <div>
 <div style="display: flex; align-items: center; gap: 8px;">
 <span style="font-size: 1.2rem;">🔬</span>
-<h3 style="font-size: 1.0625rem; font-weight: 800; color: #172033; margin: 0;">Multi-Modal Sighting Analysis &amp; Search</h3>
+<h3 style="font-size: 1.0625rem; font-weight: 800; color: #172033; margin: 0;">Analysis results</h3>
 <span id="recentUploadStatsBadge" style="background: rgba(56, 189, 248, 0.15); color: #0369a1; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 10px; border-radius: 12px; font-size: 0.875rem; font-weight: 700;">0 Sightings</span>
 </div>
-<p style="font-size: 0.875rem; color: #52647c; margin: 4px 0 0 0;">Unified batch forensics: Sighted vehicles and detected persons with cross-modal occupant-vehicle linking and synchronized raw scene evidence.</p>
+<p style="font-size: 0.875rem; color: #52647c; margin: 4px 0 0 0;">Detected vehicles and plate readings from your uploaded files.</p>
 </div>
 <div style="display: flex; gap: 8px;">
 <button class="btn btn-secondary" id="btnToggleRouteMap" onclick="window.toggleRouteMapVisibility()" style="padding: 6px 14px; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 6px; background: rgba(99, 102, 241, 0.18); color: #4338ca; border: 1px solid rgba(99, 102, 241, 0.4);" type="button">
-<span>🗺️</span> <span>Tactical Route Map</span>
+<span>🗺️</span> <span>View map</span>
 </button>
 </div>
 </div>
@@ -5372,7 +5333,7 @@
 <!-- Leaflet JS Engine for Police Route Mapping -->
 <script src="/static/vendor/leaflet/leaflet.js"></script>
 <script>window.KARNAL_CAMERA_MODE = true;</script><script src="/static/app.js?v=trail-review-2"></script><script src="/static/camera-registry.js?v=anpr-colours-1"></script>
-<script src="/static/simple-ui.js?v=2"></script>
+<script src="/static/simple-ui.js?v=3"></script>
 <script src="/static/vehicle-trail-review.js?v=2"></script>
 <script>
 

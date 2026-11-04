@@ -204,8 +204,6 @@ window.KARNAL_CAMERA_MODE = true;
             if (modal) new MutationObserver(() => {if (modal.style.display !== 'none') restoreLiveSlot();}).observe(modal, {attributes:true,attributeFilter:['style']});
         }
 
-        const upload = document.getElementById('unifiedUploadDropzone');
-        if (upload) upload.before(picker('knlUploadCamera', 'Source camera for image / video', () => {}));
 
         const dialog = document.createElement('dialog');
         dialog.id = 'knlCameraDialog';

@@ -38,8 +38,19 @@
         for (const [id,name] of Object.entries(navNames)) text(document.getElementById(id)?.querySelector('.nav-label'),name);
         text(document.getElementById('toggleModeLive')?.querySelector('span:last-child'),'Live Camera');
         text(document.getElementById('toggleModeUpload')?.querySelector('span'),'Upload & Analyze');
-        disclosure(document.getElementById('aiModelEngineBar'),'uiModelSettings','AI model settings');
+        disclosure(document.getElementById('aiModelEngineBar'),'uiModelSettings','Selected models');
         disclosure(document.getElementById('hudLayersBar'),'uiVideoOverlays','Video display options');
+        const videoOptions=document.getElementById('videoSpecificControlsBox');
+        disclosure(videoOptions,'uiUploadVideoSettings','Video options');
+        if(videoOptions){
+            const sync=()=>{document.getElementById('uiUploadVideoSettings').hidden=videoOptions.style.display==='none';};
+            sync();new MutationObserver(sync).observe(videoOptions,{attributes:true,attributeFilter:['style']});
+        }
+        const upload=document.getElementById('uploadHubPanel');
+        text(upload?.querySelector('.panel-title span'),'Upload & analyze');
+        text(document.getElementById('btnStartBatchAnalysis'),'Analyze files');
+        text(document.getElementById('btnModePhoto'),'Photo');
+        text(document.getElementById('btnModeVideo'),'Video');
         const cadence=document.getElementById('feedTargetFrame');
         disclosure(cadence?.closest('.form-group'),'uiProcessingSettings','Advanced processing');
         const form=document.getElementById('connectCameraForm');

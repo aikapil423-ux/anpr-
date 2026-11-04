@@ -58,7 +58,10 @@ class VehicleDetector:
 
     def _setup_classes(self, custom_classes: Optional[List[int]] = None):
         """Dynamically configures vehicle and person classes based on active YOLO model's class ontology."""
-        if custom_classes is not None:
+        # Small custom ontologies (UVH-26) use their own IDs, not COCO IDs.
+        model_names = getattr(self.model, "names", {})
+        custom_ontology = bool(model_names and len(model_names) <= 20)
+        if custom_classes is not None and not custom_ontology:
             self.vehicle_classes = [c for c in custom_classes if c != 0]
             self.person_classes = DEFAULT_PERSON_CLASSES if self.enable_people else []
         elif hasattr(self.model, "names") and self.model.names:
