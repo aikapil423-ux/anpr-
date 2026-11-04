@@ -36,6 +36,38 @@ async function decide(id,decision,button){
  try{const res=await fetch(`/api/vehicle-trails/observations/${id}/decision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision,detected_plate:rows.find(r=>r.id===id)?.detected_plate,candidate_plate:rows.find(r=>r.id===id)?.candidate_plate})});const data=await res.json();if(!res.ok)throw new Error(data.detail||'Review could not be saved');rows=rows.map(r=>r.id===id?data.observation:r);filter=decision==='SAME'?'matched':'normal';selectedPlate=data.observation.route_plate;lastRouteSignature='';render();document.getElementById('vtrRoute').scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('vtrFeedback').textContent=decision==='SAME'?'Same confirmed. Added to the registered vehicle trail.':'Not Same saved. Kept as a normal detection with its own trail.';await refresh();}
  catch(e){document.getElementById('vtrError').textContent=e.message;card.querySelectorAll('button').forEach(b=>b.disabled=false);}
 }
+function addRouteArrows(linePts, count = 3) {
+ if (!linePts || linePts.length < 2) return;
+ let totalDist = 0, dists = [];
+ for (let i = 0; i < linePts.length - 1; i++) {
+  const d = Math.hypot(linePts[i + 1][0] - linePts[i][0], linePts[i + 1][1] - linePts[i][1]);
+  dists.push(d);
+  totalDist += d;
+ }
+ if (!totalDist) return;
+ const targets = [];
+ for (let k = 0; k < count; k++) targets.push(totalDist * (k + 1) / (count + 1));
+ targets.forEach(target => {
+  let cur = 0;
+  for (let i = 0; i < dists.length; i++) {
+   if (cur + dists[i] >= target || i === dists.length - 1) {
+    const p1 = linePts[i], p2 = linePts[i + 1];
+    const ratio = dists[i] > 0 ? Math.max(0, Math.min(1, (target - cur) / dists[i])) : 0.5;
+    const lat = p1[0] + (p2[0] - p1[0]) * ratio, lng = p1[1] + (p2[1] - p1[1]) * ratio;
+    const deg = Math.round(Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / Math.PI);
+    const arrowIcon = L.divIcon({
+     className: 'vtr-direction-arrow',
+     html: `<div style="transform:rotate(${deg}deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.45));"><svg width="18" height="18" viewBox="0 0 24 24"><polygon points="12,2 22,22 12,17 2,22" fill="#ef4444" stroke="#ffffff" stroke-width="1.8"/></svg></div>`,
+     iconSize: [22, 22],
+     iconAnchor: [11, 11]
+    });
+    layers.push(L.marker([lat, lng], { icon: arrowIcon, interactive: false }).addTo(map));
+    break;
+   }
+   cur += dists[i];
+  }
+ });
+}
 async function renderRoute(plate){
  const version=++routeVersion,section=document.getElementById('vtrRoute');section.hidden=false;
  const sightings=rows.filter(r=>r.route_plate===plate&&r.status!=='PENDING').sort((a,b)=>a.epoch-b.epoch||a.id-b.id);
@@ -61,23 +93,15 @@ async function renderRoute(plate){
  caption.textContent=points.length===0?'No registered camera coordinates for these sightings.':locations.size===1?'Vehicle seen at one camera location. No road route can be inferred from one location.':'Dashed line shows camera detection order. A suggested road route is loading; it is not proof of the actual travelled path.';
  if(path.length>1){
   layers.push(L.polyline(path,{color:'#64748b',weight:2,dashArray:'7 7'}).addTo(map));
-  for(let i=0;i<path.length-1;i++){
-   const p1=path[i],p2=path[i+1];
-   const midLat=(p1[0]+p2[0])/2, midLng=(p1[1]+p2[1])/2;
-   const dLat=p2[0]-p1[0], dLng=p2[1]-p1[1];
-   const deg=Math.round(Math.atan2(dLng,dLat)*180/Math.PI);
-   const arrowIcon=L.divIcon({
-    className:'vtr-direction-arrow',
-    html:`<div style="transform:rotate(${deg}deg);color:#ef4444;font-size:18px;font-weight:900;line-height:1;text-shadow:0 0 3px #fff;">➤</div>`,
-    iconSize:[20,20],
-    iconAnchor:[10,10]
-   });
-   layers.push(L.marker([midLat,midLng],{icon:arrowIcon,interactive:false}).addTo(map));
-  }
+  addRouteArrows(path, Math.min(path.length, 3));
  }
  requestAnimationFrame(()=>{map.invalidateSize();if(points.length)map.fitBounds(points.map(r=>[r.lat,r.lng]),{padding:[25,25],maxZoom:16});});
  if(path.length>1&&path.length<=25){
-  try{const coords=path.map(p=>`${p[1]},${p[0]}`).join(';');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);let res;try{res=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`,{signal:controller.signal});}finally{clearTimeout(timeout);}const data=await res.json();if(version!==routeVersion)return;const road=data.routes?.[0];if(!road)throw new Error('No road route');layers.push(L.geoJSON(road.geometry,{style:{color:'#2563eb',weight:4}}).addTo(map));caption.textContent=`Suggested road route: ${(road.distance/1000).toFixed(1)} km. Pins are observed camera locations; the road path is estimated.`;}
+  try{const coords=path.map(p=>`${p[1]},${p[0]}`).join(';');const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);let res;try{res=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`,{signal:controller.signal});}finally{clearTimeout(timeout);}const data=await res.json();if(version!==routeVersion)return;const road=data.routes?.[0];if(!road)throw new Error('No road route');layers.push(L.geoJSON(road.geometry,{style:{color:'#2563eb',weight:4}}).addTo(map));
+   if(road.geometry&&road.geometry.coordinates){
+    const roadCoords=road.geometry.coordinates.map(c=>[c[1],c[0]]);
+    addRouteArrows(roadCoords, Math.max(3, Math.min(8, path.length * 2)));
+   }caption.textContent=`Suggested road route: ${(road.distance/1000).toFixed(1)} km. Pins are observed camera locations; the road path is estimated.`;}
   catch(e){if(version===routeVersion)caption.textContent='Camera pins and detection order are shown. Suggested road routing is unavailable; the dashed line is not an observed road path.';}
  }else if(path.length>25)caption.textContent='Camera pins and detection order are shown. Road routing supports up to 25 consecutive locations.';
 }
