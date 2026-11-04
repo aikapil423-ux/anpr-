@@ -107,12 +107,27 @@ async function renderRoute(plate){
 }
 function init(){
  const view=document.getElementById('subviewVehicleTrail');if(!view)return;
- const panel=document.createElement('section');panel.id='vehicleTrailReviewPanel';panel.innerHTML=`<div class="vtr-heading"><h3>Vehicle trails</h3><button type="button" class="btn btn-secondary" id="vtrRefresh">Refresh</button></div><p id="vtrSummary">Loading camera sightings…</p><div class="vtr-toolbar"><input type="search" id="vtrSearch" aria-label="Search vehicle trails" placeholder="Search number or camera…"><button class="filter-btn active" data-vtr-filter="all">All trails</button><button class="filter-btn" data-vtr-filter="pending">Needs review <span id="vtrPendingCount">0</span></button><button class="filter-btn" data-vtr-filter="matched">Watchlist matched</button></div><p id="vtrError" role="status"></p><p id="vtrFeedback" role="status"></p><section id="vtrRoute" hidden><div class="vtr-heading"><h4 id="vtrRouteTitle"></h4><button class="btn btn-secondary" data-close-route>Close map</button></div><p id="vtrRouteCaption"></p><div id="vtrMap"></div><ol id="vtrTimeline"></ol></section><div id="vtrList"></div>`;
+ const panel=document.createElement('section');panel.id='vehicleTrailReviewPanel';panel.innerHTML=`<div class="vtr-heading"><h3>Vehicle trails</h3><button type="button" class="btn btn-danger" id="vtrClear">Clear entries</button><button type="button" class="btn btn-secondary" id="vtrRefresh">Refresh</button></div><p id="vtrSummary">Loading camera sightings…</p><div class="vtr-toolbar"><input type="search" id="vtrSearch" aria-label="Search vehicle trails" placeholder="Search number or camera…"><button class="filter-btn active" data-vtr-filter="all">All trails</button><button class="filter-btn" data-vtr-filter="pending">Needs review <span id="vtrPendingCount">0</span></button><button class="filter-btn" data-vtr-filter="matched">Watchlist matched</button></div><p id="vtrError" role="status"></p><p id="vtrFeedback" role="status"></p><section id="vtrRoute" hidden><div class="vtr-heading"><h4 id="vtrRouteTitle"></h4><button class="btn btn-secondary" data-close-route>Close map</button></div><p id="vtrRouteCaption"></p><div id="vtrMap"></div><ol id="vtrTimeline"></ol></section><div id="vtrList"></div>`;
  // Keep the previous registered-vehicle history available below the new workflow.
  const legacy=document.createElement('details');legacy.className='vtr-legacy';legacy.innerHTML='<summary>Registered vehicle history & filters</summary>';while(view.firstChild)legacy.append(view.firstChild);view.append(panel,legacy);
  panel.addEventListener('click',e=>{const button=e.target.closest('button');if(!button)return;if(button.dataset.decision)decide(Number(button.dataset.id),button.dataset.decision,button);else if(button.dataset.route){selectedPlate=button.dataset.route;lastRouteSignature=JSON.stringify(rows.filter(r=>r.route_plate===selectedPlate));renderRoute(selectedPlate);document.getElementById('vtrRoute').scrollIntoView({behavior:'smooth',block:'start'});}else if(button.hasAttribute('data-close-route')){selectedPlate=null;routeVersion++;document.getElementById('vtrRoute').hidden=true;}else if(button.dataset.vtrFilter){filter=button.dataset.vtrFilter;render();}});
  document.getElementById('vtrSearch').addEventListener('input',e=>{query=e.target.value.trim().toLowerCase();render();});
  document.getElementById('vtrRefresh').addEventListener('click',refresh);
+ document.getElementById('vtrClear').addEventListener('click',async e=>{
+  if(busy)return;
+  if(!rows.length){alert('No trail entries to clear.');return;}
+  if(!confirm(`Clear all ${rows.length} vehicle trail and review entries in your account scope? This includes all filters. Registry and captured vehicles stay unchanged. This cannot be undone.`))return;
+  const button=e.currentTarget;button.disabled=true;busy=true;
+  try{
+   const res=await fetch('/api/vehicle-trails/observations',{method:'DELETE'});
+   if(!res.ok)throw new Error(res.status===405||res.status===404?'Clear entries is not active on the server. Restart the backend and refresh this page.':res.status===401?'Please sign in again to clear entries.':'Could not clear trail entries. Please retry.');
+   const data=await res.json();rows=[];selectedPlate=null;routeVersion++;lastRouteSignature='';
+   document.getElementById('vtrRoute').hidden=true;render();
+   document.getElementById('vtrFeedback').textContent=`${data.deleted_count} entries cleared.`;
+   document.getElementById('vtrError').textContent='';
+  }catch(error){document.getElementById('vtrError').textContent=error.message;}
+  finally{busy=false;button.disabled=false;}
+ });
  const viewPanel=document.getElementById('viewMasterTrail');new MutationObserver(()=>{if(viewPanel.style.display!=='none')refresh();}).observe(viewPanel,{attributes:true,attributeFilter:['style']});
  document.getElementById('btnAlertBell')?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();filter='pending';window.switchTab?.('master-trail');refresh();render();},true);
  window.refreshVehicleTrailReview=refresh;

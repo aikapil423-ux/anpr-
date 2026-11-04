@@ -1,6 +1,9 @@
 // Display policy only; keep the complete evidence and stored detections intact.
 window.isVisibleVehicleDetection = function (vehicle) {
   if (!vehicle) return false;
+  const plate = String(vehicle.plate_number || vehicle.final_plate || vehicle.normalized_plate || vehicle.display_plate || '').trim().toUpperCase();
+  const displayPlate = String(vehicle.display_plate || '').toUpperCase();
+  if (!plate || /UNREADABLE|UNKNOWN|NO\s*PLATE|NOT\s*DETECTED/.test(plate + ' ' + displayPlate)) return false;
   const raw = vehicle.confidence ?? vehicle.final_confidence ?? vehicle.ocr_confidence;
   if (raw === null || raw === undefined || raw === '') return false;
   let confidence = Number(raw);
@@ -12300,13 +12303,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   window.clearAllCapturedVehicles = async function () {
-    if (!confirm("Are you sure you want to clear all captured vehicle records?")) return;
     try {
-      await fetch('/api/captured', {
+      const summaryRes = await fetch('/api/capture-clear-summary');
+      if (!summaryRes.ok) throw new Error('Could not load the record count. Please retry.');
+      const summary = await summaryRes.json();
+      if (!summary.total_count) {
+        alert('No captured vehicle data to clear.');
+        return;
+      }
+      if (!confirm(`Clear all ${summary.total_count} captured vehicle records and their photos?\nThis includes hidden and low-confidence captures across all cameras and uploads.\nVehicle Registry and watchlist will stay unchanged.\nThis cannot be undone.`)) return;
+      const res = await fetch('/api/captured', {
         method: 'DELETE'
       });
-      fetchAndRenderDrawerVehicles();
-      fetchAndRenderUnifiedLiveFeed();
+      if (!res.ok) throw new Error('Could not clear vehicle data. Please retry.');
+      window._freshVehiclesCache?.clear();
+      await fetchAndRenderDrawerVehicles();
+      await fetchAndRenderUnifiedLiveFeed();
+      await fetchAndRenderCapturedDb();
+      alert('Captured vehicle data cleared.');
     } catch (err) {
       alert("Error clearing vehicle captures: " + err.message);
     }

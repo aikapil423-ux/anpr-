@@ -31,6 +31,7 @@ class TrailReviewDB:
             )""")
             conn.execute("CREATE INDEX IF NOT EXISTS observation_scope ON observations(district,operator_username,epoch)")
             conn.execute("CREATE INDEX IF NOT EXISTS observation_route ON observations(route_plate,status)")
+            conn.execute("CREATE TABLE IF NOT EXISTS cleared_captures (capture_id INTEGER PRIMARY KEY)")
             conn.commit()
 
     def connect(self):
@@ -56,6 +57,9 @@ class TrailReviewDB:
         if not plate or plate in ("UNREADABLE", "UNKNOWN") or not (8 <= len(plate) <= 11):
             return None
         capture_id = int(record["id"])
+        with closing(self.connect()) as conn:
+            if conn.execute("SELECT 1 FROM cleared_captures WHERE capture_id=?", (capture_id,)).fetchone():
+                return None
         camera = resolve_camera(location=record.get("location"))
         stamp = record.get("captured_at")
         try:
@@ -111,6 +115,23 @@ class TrailReviewDB:
         where,params=self.scope(district,operator)
         with closing(self.connect()) as conn:
             return [dict(r) for r in conn.execute(f"SELECT * FROM observations WHERE {where} AND LENGTH(detected_plate) BETWEEN 8 AND 11 ORDER BY epoch DESC,id DESC",params)]
+
+    def clear(self, district=None, operator=None):
+        """Clear scoped review entries and prevent old captures being imported again."""
+        where, params = self.scope(district, operator)
+        with closing(self.connect()) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            rows = conn.execute(f"SELECT capture_id,plate_photo,vehicle_photo FROM observations WHERE {where}", params).fetchall()
+            conn.executemany("INSERT OR IGNORE INTO cleared_captures(capture_id) VALUES (?)", [(r['capture_id'],) for r in rows])
+            conn.execute(f"DELETE FROM observations WHERE {where}", params)
+            conn.commit()
+        for row in rows:
+            for key in ('plate_photo', 'vehicle_photo'):
+                if row[key]:
+                    photo = (self.photos / Path(row[key]).name).resolve()
+                    if photo.parent == self.photos.resolve():
+                        photo.unlink(missing_ok=True)
+        return len(rows)
 
     def decide(self, observation_id, decision, reviewer, district=None, operator=None, expected_plate=None, expected_candidate=None):
         if decision not in ("SAME","NOT_SAME"):

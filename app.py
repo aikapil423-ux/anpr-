@@ -1401,6 +1401,10 @@ def clear_all_captured():
     captured_db.clear_all()
     return {'status': 'success', 'cleared': True}
 
+@app.get('/api/capture-clear-summary')
+def capture_clear_summary():
+    return {'total_count': captured_db.get_total_count()}
+
 @app.get('/api/trails')
 def get_vehicle_trails(request: Request, search: Optional[str]=None, district: Optional[str]=None, operator: Optional[str]=None):
     """
@@ -2508,6 +2512,11 @@ async def decide_vehicle_trail_observation(observation_id: int, request: Request
         hotlist_info=("Human confirmed match: " + row["candidate_plate"]) if matched else "",
         update_timestamp=False)
     return {"success": True, "observation": row}
+
+@app.delete('/api/vehicle-trails/observations')
+def clear_vehicle_trail_observations(request: Request):
+    _, _, store, district, operator = _vehicle_trail_review_context(request)
+    return {'success': True, 'deleted_count': store.clear(district, operator)}
 
 if __name__ == '__main__':
     server_port = int(os.getenv('PORT', '8000'))
