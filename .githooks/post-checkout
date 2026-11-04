@@ -1,0 +1,12 @@
+#!/bin/sh
+# Git post-checkout hook: runs automatically after git checkout / branch switch
+if [ "$3" = "1" ]; then
+    # Only run on branch checkout, not file checkout
+    if command -v python3 >/dev/null 2>&1; then
+        python3 scripts/download_models.py
+    elif command -v python >/dev/null 2>&1; then
+        python scripts/download_models.py
+    elif command -v py >/dev/null 2>&1; then
+        py scripts/download_models.py
+    fi
+fi

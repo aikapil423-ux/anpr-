@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clean Dropdowns with Hover Specs Card Inside Open Menu</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .custom-dropdown-menu {
+      display: none;
+      backdrop-filter: blur(14px);
+    }
+    .custom-dropdown.open .custom-dropdown-menu {
+      display: block;
+    }
+    .dropdown-item {
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .dropdown-item:hover {
+      background: rgba(99, 102, 241, 0.25);
+    }
+    #specsTooltipCard {
+      pointer-events: none;
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-4">
+
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl p-5 shadow-2xl max-w-5xl mx-auto space-y-6">
+    
+    <!-- Title -->
+    <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
+      <div>
+        <h2 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+          <span>🎯</span> Clean Dropdowns: Tooltips Appear ONLY Inside Open Menu List
+        </h2>
+        <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+          Band dropdown par mouse le jaane se <strong>kuch nahi khulega</strong>. Jab aap click karke dropdown open karenge, tab list items par cursor ghumane se hi specs card dikhega.
+        </p>
+      </div>
+      <div class="text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+        Clean On-Click Mode
+      </div>
+    </div>
+
+    <!-- AI Model Bar with Custom Dropdowns -->
+    <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 shadow-lg relative">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        
+        <!-- Dropdown Cluster -->
+        <div class="flex items-center gap-2.5 flex-wrap">
+          
+          <!-- ANPR Tag -->
+          <div class="flex items-center gap-2 bg-slate-950/80 p-1.5 px-2.5 rounded-lg border border-slate-800">
+            <span class="text-xs font-bold text-indigo-400 tracking-wider">🚗 ANPR:</span>
+
+            <!-- Dropdown 1: Vehicle Model (NO HOVER ON CLOSED BUTTON) -->
+            <div class="relative custom-dropdown" id="ddVehicle">
+              <button type="button" onclick="toggleDropdown('ddVehicle')" class="flex items-center justify-between gap-2 bg-slate-900 border border-indigo-500/40 hover:border-indigo-400 text-xs text-slate-100 font-semibold px-2.5 py-1.5 rounded-md w-38 shadow-sm transition">
+                <span id="labelVehicle" class="truncate">IISc UVH-26 🇮🇳</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div class="custom-dropdown-menu absolute left-0 top-full mt-1.5 w-56 bg-slate-950/98 border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50">
+                <div class="text-[10px] font-bold text-slate-500 px-2 py-1 uppercase tracking-wider">🇮🇳 Indian Traffic</div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'uvh26_yolo11x')" onmouseleave="hideTooltip()" onclick="selectItem('ddVehicle', 'labelVehicle', 'IISc UVH-26 🇮🇳')">
+                  <span>IISc UVH-26</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">326MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'driveindia_tihan_yolov10x')" onmouseleave="hideTooltip()" onclick="selectItem('ddVehicle', 'labelVehicle', 'TiHAN 10x 🇮🇳')">
+                  <span>TiHAN 10x</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">122MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'driveindia_tihan_yolov10m')" onmouseleave="hideTooltip()" onclick="selectItem('ddVehicle', 'labelVehicle', 'TiHAN 10m ⚖️')">
+                  <span>TiHAN 10m</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">64MB</span>
+                </div>
+                <div class="text-[10px] font-bold text-slate-500 px-2 py-1 uppercase tracking-wider mt-1 border-t border-slate-800">🌐 Global Baseline</div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'yolo11n')" onmouseleave="hideTooltip()" onclick="selectItem('ddVehicle', 'labelVehicle', 'YOLO11n ⚡')">
+                  <span>YOLO11n Nano</span>
+                  <span class="text-[10px] text-blue-400 font-bold">5.6MB</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dropdown 2: License Plate Model -->
+            <div class="relative custom-dropdown" id="ddPlate">
+              <button type="button" onclick="toggleDropdown('ddPlate')" class="flex items-center justify-between gap-2 bg-slate-900 border border-emerald-500/40 hover:border-emerald-400 text-xs text-slate-100 font-semibold px-2.5 py-1.5 rounded-md w-38 shadow-sm transition">
+                <span id="labelPlate" class="truncate">YOLO11s Plate 🇮🇳</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div class="custom-dropdown-menu absolute left-0 top-full mt-1.5 w-56 bg-slate-950/98 border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50">
+                <div class="text-[10px] font-bold text-slate-500 px-2 py-1 uppercase tracking-wider">🇮🇳 Indian Plates</div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'rtdetrv2_x_plate')" onmouseleave="hideTooltip()" onclick="selectItem('ddPlate', 'labelPlate', 'RT-DETRv2-X 🇮🇳')">
+                  <span>RT-DETRv2-X</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">~240MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'indian_lpr_combo')" onmouseleave="hideTooltip()" onclick="selectItem('ddPlate', 'labelPlate', 'Indian LPR 🇮🇳')">
+                  <span>Indian_LPR Combo</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">35MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'yolo11l_indian_plate')" onmouseleave="hideTooltip()" onclick="selectItem('ddPlate', 'labelPlate', 'YOLO11l Night 🇮🇳')">
+                  <span>YOLO11l Night</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">85MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'yolo11s_plate')" onmouseleave="hideTooltip()" onclick="selectItem('ddPlate', 'labelPlate', 'YOLO11s Plate 🇮🇳')">
+                  <span>YOLO11s High-Recall</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">18MB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FRS Tag -->
+          <div class="flex items-center gap-2 bg-slate-950/80 p-1.5 px-2.5 rounded-lg border border-slate-800">
+            <span class="text-xs font-bold text-sky-400 tracking-wider">👤 FRS:</span>
+
+            <!-- Dropdown 3: Face Detector -->
+            <div class="relative custom-dropdown" id="ddFace">
+              <button type="button" onclick="toggleDropdown('ddFace')" class="flex items-center justify-between gap-2 bg-slate-900 border border-sky-500/40 hover:border-sky-400 text-xs text-slate-100 font-semibold px-2.5 py-1.5 rounded-md w-36 shadow-sm transition">
+                <span id="labelFace" class="truncate">SCRFD-10G ⚡</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+
+              <div class="custom-dropdown-menu absolute left-0 top-full mt-1.5 w-52 bg-slate-950/98 border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50">
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'scrfd_10g')" onmouseleave="hideTooltip()" onclick="selectItem('ddFace', 'labelFace', 'SCRFD-10G ⚡')">
+                  <span>SCRFD-10G (RTSP)</span>
+                  <span class="text-[10px] text-sky-400 font-bold">16MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'dsfd_r152')" onmouseleave="hideTooltip()" onclick="selectItem('ddFace', 'labelFace', 'DSFD-152 🏆')">
+                  <span>DSFD ResNet-152</span>
+                  <span class="text-[10px] text-purple-400 font-bold">459MB</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dropdown 4: Face Embedder -->
+            <div class="relative custom-dropdown" id="ddEmbedder">
+              <button type="button" onclick="toggleDropdown('ddEmbedder')" class="flex items-center justify-between gap-2 bg-slate-900 border border-purple-500/40 hover:border-purple-400 text-xs text-slate-100 font-semibold px-2.5 py-1.5 rounded-md w-36 shadow-sm transition">
+                <span id="labelEmbedder" class="truncate">ArcFace R34 ⚡</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+
+              <div class="custom-dropdown-menu absolute left-0 top-full mt-1.5 w-52 bg-slate-950/98 border border-slate-700/80 rounded-xl shadow-2xl p-1 z-50">
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'arcface_r34')" onmouseleave="hideTooltip()" onclick="selectItem('ddEmbedder', 'labelEmbedder', 'ArcFace R34 ⚡')">
+                  <span>ArcFace ResNet-34</span>
+                  <span class="text-[10px] text-purple-400 font-bold">130MB</span>
+                </div>
+                <div class="dropdown-item flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs font-medium text-slate-200" onmouseenter="showItemTooltip(event, 'arcface_iresnet50')" onmouseleave="hideTooltip()" onclick="selectItem('ddEmbedder', 'labelEmbedder', 'iResNet-50 ⚖️')">
+                  <span>ArcFace iResNet-50</span>
+                  <span class="text-[10px] text-purple-400 font-bold">166MB</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Telemetry & Rename Trigger -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/35 px-2.5 py-1 rounded-full text-xs font-mono text-emerald-400 font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>41.8 ms</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= HOVER SPECS CARD (APPEARS ONLY NEXT TO OPEN MENU ITEMS) ================= -->
+      <div id="specsTooltipCard" class="absolute z-[999] bg-slate-900/98 border border-indigo-500/60 rounded-xl p-3.5 shadow-2xl text-xs w-72 opacity-0 transform -translate-y-2 pointer-events-none transition-all duration-150">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <span id="cardName" class="font-bold text-white text-[13px]">Model Name</span>
+          <span id="cardOrigin" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Origin</span>
+        </div>
+        
+        <p id="cardDesc" class="text-slate-400 text-[11px] mb-2.5 leading-relaxed">Description</p>
+        
+        <div class="grid grid-cols-3 gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 text-center font-mono">
+          <div>
+            <div class="text-[10px] text-slate-500">SIZE</div>
+            <div id="cardSize" class="text-xs font-bold text-slate-200">0 MB</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">SPEED</div>
+            <div id="cardFps" class="text-xs font-bold text-emerald-400">0 FPS</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">ACCURACY</div>
+            <div id="cardAccuracy" class="text-xs font-bold text-indigo-400">0% mAP</div>
+          </div>
+        </div>
+
+        <div class="mt-2 text-[10px] text-slate-500 text-right">
+          ⚡ Latency: <span id="cardLatency" class="text-slate-300 font-semibold font-mono">0 ms</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live Instructions -->
+    <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800 text-xs text-slate-400 leading-relaxed">
+      <strong class="text-emerald-400">Aapki requirement ke mutabik:</strong><br>
+      • Band dropdown button par cursor le jane se <strong>koi card nahi khulta</strong> (bilkul clean).<br>
+      • Jab aap kisi dropdown par <strong>click karenge</strong> aur niche list khulegi, tab uske andar kisi bhi model par cursor ghumane se hi bagal me specs card popup hoga.<br>
+      • Kisi option par click karte hi dropdown band ho jayega aur card turant hide ho jayega.
+    </div>
+
+  </div>
+
+  <script>
+    const SPECS = {
+      uvh26_yolo11x: { name: "IISc UVH-26 (YOLOv11x)", origin: "🇮🇳 IISc Bangalore", size: "326.6 MB", fps: "14 FPS", latency: "71 ms", accuracy: "89.4% mAP", desc: "14 Indian vehicle classes: Auto, Tempo, Truck, Bus, etc. High accuracy benchmark." },
+      driveindia_tihan_yolov10x: { name: "DriveIndia TiHAN 10x", origin: "🇮🇳 TiHAN Hyderabad", size: "122.3 MB", fps: "22 FPS", latency: "45 ms", accuracy: "91.8% mAP", desc: "Dual Vehicle + Pedestrian Indian benchmark." },
+      driveindia_tihan_yolov10m: { name: "DriveIndia TiHAN 10m", origin: "🇮🇳 TiHAN Hyderabad", size: "63.8 MB", fps: "36 FPS", latency: "28 ms", accuracy: "87.6% mAP", desc: "Balanced edge latency for Indian traffic." },
+      yolo11n: { name: "YOLO11n Nano Baseline", origin: "🌐 Global Baseline", size: "5.6 MB", fps: "68 FPS", latency: "14 ms", accuracy: "78.2% mAP", desc: "Ultra-fast low-latency detector." },
+      rtdetrv2_x_plate: { name: "RT-DETRv2-X Transformer", origin: "🇮🇳 IISc Bangalore", size: "129.5 MB", fps: "20 FPS", latency: "50 ms", accuracy: "94.2% mAP", desc: "Heavy real-time transformer for cluttered Indian plates." },
+      indian_lpr_combo: { name: "Indian_LPR Combo", origin: "🇮🇳 Indian Traffic", size: "34.7 MB", fps: "32 FPS", latency: "31 ms", accuracy: "92.5% mAP", desc: "Polygon segmentation for tilted & rickshaw plates." },
+      yolo11l_indian_plate: { name: "YOLO11l Indian Night", origin: "🇮🇳 Night CLAHE", size: "49.0 MB", fps: "28 FPS", latency: "35 ms", accuracy: "90.7% mAP", desc: "CLAHE contrast filter for dark/night feeds." },
+      yolo11s_plate: { name: "YOLO11s Indian Diverse", origin: "🇮🇳 High Recall", size: "18.3 MB", fps: "48 FPS", latency: "21 ms", accuracy: "89.1% mAP", desc: "High recall across Indian fonts & 2-wheelers." },
+      scrfd_10g: { name: "SCRFD-10G InsightFace", origin: "🌐 Global ONNX", size: "16.2 MB", fps: "52 FPS", latency: "19 ms", accuracy: "94.8% WiderFace", desc: "Ultra-fast face detection & 5 landmarks for RTSP." },
+      dsfd_r152: { name: "DSFD ResNet-152 Forensics", origin: "🌐 Heavy Dual-Shot", size: "459.0 MB", fps: "9 FPS", latency: "110 ms", accuracy: "97.6% WiderFace", desc: "Deep ResNet-152 for tiny/distant faces." },
+      arcface_r34: { name: "ArcFace ResNet-34", origin: "🌐 Fast ONNX 512-D", size: "130.3 MB", fps: "45 FPS", latency: "22 ms", accuracy: "99.5% LFW", desc: "Fast 34-layer ArcFace ONNX embedder extracting 512-D vectors." },
+      arcface_iresnet50: { name: "ArcFace iResNet-50", origin: "🌐 WebFace600K SOTA", size: "166.3 MB", fps: "26 FPS", latency: "38 ms", accuracy: "99.8% LFW", desc: "50-layer improved ResNet for maximum forensic accuracy." }
+    };
+
+    function toggleDropdown(id) {
+      const el = document.getElementById(id);
+      const wasOpen = el.classList.contains('open');
+      hideTooltip();
+      document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
+      if (!wasOpen) el.classList.add('open');
+    }
+
+    function selectItem(ddId, labelId, text) {
+      document.getElementById(labelId).innerText = text;
+      document.getElementById(ddId).classList.remove('open');
+      hideTooltip();
+    }
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
+        hideTooltip();
+      }
+    });
+
+    const card = document.getElementById('specsTooltipCard');
+
+    function showItemTooltip(e, mid) {
+      const d = SPECS[mid];
+      if (!d || !card) return;
+
+      document.getElementById('cardName').innerText = d.name;
+      document.getElementById('cardOrigin').innerText = d.origin;
+      document.getElementById('cardDesc').innerText = d.desc;
+      document.getElementById('cardSize').innerText = d.size;
+      document.getElementById('cardFps').innerText = d.fps;
+      document.getElementById('cardAccuracy').innerText = d.accuracy;
+      document.getElementById('cardLatency').innerText = d.latency;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const parentRect = card.parentElement.getBoundingClientRect();
+      
+      let left = rect.right - parentRect.left + 12;
+      let top = rect.top - parentRect.top - 6;
+
+      if (left + 295 > parentRect.width) {
+        left = rect.left - parentRect.left - 298;
+      }
+
+      card.style.left = left + 'px';
+      card.style.top = top + 'px';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }
+
+    function hideTooltip() {
+      if (!card) return;
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(-6px)';
+    }
+  </script>
+</body>
+</html>

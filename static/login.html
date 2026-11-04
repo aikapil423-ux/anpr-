@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Haryana Police - Official Surveillance Portal Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --bg-body: #f4f7fb;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --border-highlight: #3b82f6;
+            --text-primary: #172033;
+            --text-secondary: #52647c;
+            --text-muted: #64748b;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 50% 15%, rgba(30, 58, 138, 0.22) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(241,245,249,0.4) 0%, transparent 50%);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 36px 32px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6, #10b981);
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .police-badge-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            background: rgba(30, 58, 138, 0.25);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1d4ed8;
+        }
+
+        .brand-header h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .brand-header .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 14px 11px 38px;
+            background: #f4f7fb;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.9825rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            background: #f8fafc;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.0125rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #b91c1c;
+            font-size: 0.875rem;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .security-notice {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .security-notice strong {
+            color: #52647c;
+        }
+
+        .quick-login-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 22px 0 14px 0;
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .quick-login-divider::before,
+        .quick-login-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .quick-login-divider span {
+            padding: 0 10px;
+        }
+
+        .quick-login-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .btn-quick-login {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: #f4f7fb;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            width: 100%;
+        }
+
+        .btn-quick-login:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-quick-dev {
+            border-color: rgba(244, 63, 94, 0.45);
+            background: rgba(244, 63, 94, 0.09);
+        }
+        .btn-quick-dev:hover {
+            background: rgba(244, 63, 94, 0.2);
+            border-color: #f43f5e;
+            box-shadow: 0 4px 14px rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-quick-state {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .btn-quick-state:hover {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: #6366f1;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-quick-district {
+            border-color: rgba(14, 165, 233, 0.4);
+            background: rgba(14, 165, 233, 0.08);
+        }
+        .btn-quick-district:hover {
+            background: rgba(14, 165, 233, 0.18);
+            border-color: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+        }
+
+        .btn-quick-operator {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .btn-quick-operator:hover {
+            background: rgba(16, 185, 129, 0.18);
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-quick-kaithal {
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .btn-quick-kaithal:hover {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: #f59e0b;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-quick-login .ql-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn-quick-login .ql-role {
+            font-size: 0.8825rem;
+            font-weight: 700;
+        }
+
+        .btn-quick-login .ql-desc {
+            font-size: 0.875rem;
+            color: #52647c;
+            font-family: var(--font-mono);
+        }
+
+        .btn-quick-login .ql-arrow {
+            font-size: 0.875rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #475569;
+        }
+    </style>
+<link href="/static/light-ui.css?v=9" rel="stylesheet"/></head>
+<body class="ui-light">
+<div class="login-wrapper">
+<div class="login-card">
+<div class="brand-header">
+<div class="police-badge-icon">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+</div>
+<h1>HARYANA POLICE</h1>
+<div class="subtitle">Unified Surveillance &amp; Forensic Intelligence Hub</div>
+</div>
+<div class="login-error" id="loginError"></div>
+<form id="loginForm" onsubmit="handleLoginSubmit(event)">
+<div class="form-group">
+<label for="usernameInput">Officer Login ID / Username</label>
+<div class="input-wrap">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+<input autocomplete="username" class="form-control" id="usernameInput" placeholder="e.g. stateadmin / admin_panipat / op_5421 / op_kaithal" required="" type="text"/>
+</div>
+</div>
+<div class="form-group">
+<label for="passwordInput">Password</label>
+<div class="input-wrap">
+<svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="16"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+<input autocomplete="current-password" class="form-control" id="passwordInput" placeholder="Enter password" required="" type="password"/>
+</div>
+</div>
+<button class="btn-login" id="btnLoginSubmit" type="submit">Sign In to Surveillance Hub</button>
+</form>
+<div class="quick-login-divider">
+<span>Fast 1-Click Login (Testing Mode)</span>
+</div>
+<div class="quick-login-grid">
+<!-- Developer Admin (Single-Click ID Fill, Manual Password Entry) -->
+<button class="btn-quick-login btn-quick-dev" onclick="quickSelectDeveloperAdmin()" title="Auto-fill Developer Admin ID and enter password manually" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #fb7185; display: flex; align-items: center; gap: 6px;">
+<span>🛠️ Developer Admin (Demo Sandbox)</span>
+<span style="font-size: 0.875rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: rgba(244, 63, 94, 0.25); color: #fda4af; letter-spacing: 0.5px;">MANUAL PASS</span>
+</span>
+<span class="ql-desc">developer_admin • Click to Fill ID • Enter Password Manually</span>
+</div>
+<span class="ql-arrow" style="background: rgba(244, 63, 94, 0.2); color: #fda4af;">Select →</span>
+</button>
+<button class="btn-quick-login btn-quick-state" onclick="quickLogin('stateadmin', 'HaryanaPolice@HQ2026', 'State Admin')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #4338ca;">State Admin (HQ)</span>
+<span class="ql-desc">stateadmin • Full Statewide Authority</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button>
+<button class="btn-quick-login btn-quick-district" onclick="quickLogin('admin_panipat', 'PanipatAdmin@2026', 'District Admin')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #0369a1;">District Admin (Panipat)</span>
+<span class="ql-desc">admin_panipat • District Authority</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button><button class="btn-quick-login btn-quick-operator" onclick="quickLogin('op_karnal', 'KarnalOperator@123', 'Duty Operator (Karnal)')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #34d399;">Operator (Karnal Demo)</span>
+<span class="ql-desc">op_karnal • ICCC Karnal Cameras</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button><button class="btn-quick-login btn-quick-district" onclick="quickLogin('admin_karnal', 'KarnalAdmin@2026', 'District Admin (Karnal)')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #38bdf8;">District Admin (Karnal Demo)</span>
+<span class="ql-desc">admin_karnal • Karnal District Authority</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button>
+<button class="btn-quick-login btn-quick-operator" onclick="quickLogin('op_5421', 'Operator@123', 'Duty Operator (Panipat)')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #047857;">Operator (Panipat Naka)</span>
+<span class="ql-desc">op_5421 • Surveillance &amp; Entry Only</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button>
+<button class="btn-quick-login btn-quick-kaithal" onclick="quickLogin('op_kaithal', 'KaithalOperator@123', 'Duty Operator (Kaithal)')" type="button">
+<div class="ql-info">
+<span class="ql-role" style="color: #fbbf24;">Operator (Kaithal Checkpost)</span>
+<span class="ql-desc">op_kaithal • Surveillance &amp; Entry Only</span>
+</div>
+<span class="ql-arrow">Login →</span>
+</button>
+</div>
+<div class="security-notice">
+<strong>RESTRICTED ACCESS PORTAL</strong><br/>
+                For authorized Haryana Police personnel only. All access, login attempts, and operational queries are permanently logged and audited under the Information Technology Act.
+            </div>
+</div>
+</div>
+<script>
+        function quickSelectDeveloperAdmin() {
+            const userInput = document.getElementById('usernameInput');
+            const passInput = document.getElementById('passwordInput');
+            const errBox = document.getElementById('loginError');
+
+            // 1. Fill username only
+            userInput.value = 'developer_admin';
+
+            // 2. Clear password so user must enter it manually
+            passInput.value = '';
+            errBox.style.display = 'none';
+
+            // 3. Immediately focus the password field
+            passInput.focus();
+            passInput.setAttribute('placeholder', 'Enter password for developer_admin');
+
+            // 4. Temporary glow animation on password field to guide user
+            passInput.style.borderColor = '#f43f5e';
+            passInput.style.boxShadow = '0 0 0 3px rgba(244, 63, 94, 0.35)';
+            setTimeout(() => {
+                passInput.style.borderColor = '';
+                passInput.style.boxShadow = '';
+            }, 1800);
+        }
+
+        async function quickLogin(username, password, roleLabel) {
+            document.getElementById('usernameInput').value = username;
+            document.getElementById('passwordInput').value = password;
+            const btn = document.getElementById('btnLoginSubmit');
+            btn.innerText = `Logging in as ${roleLabel}...`;
+            btn.disabled = true;
+
+            const fakeEvent = { preventDefault: () => {} };
+            await handleLoginSubmit(fakeEvent);
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnLoginSubmit');
+            const errBox = document.getElementById('loginError');
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            if (!btn.innerText.startsWith("Logging in as")) {
+                btn.innerText = "Authenticating...";
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    window.location.href = '/';
+                } else {
+                    errBox.innerText = data.detail || 'Invalid username or password.';
+                    errBox.style.display = 'block';
+                }
+            } catch (err) {
+                errBox.innerText = 'Connection error. Please verify the surveillance server is running.';
+                errBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Sign In to Surveillance Hub";
+            }
+        }
+    </script>
+</body>
+</html>

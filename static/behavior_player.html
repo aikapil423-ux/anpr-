@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haryana Police - Behavior & Situational Intelligence Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0a0f1d;
+            --bg-card: #111827;
+            --bg-card-hover: #1f2937;
+            --border-color: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --alert-red: #ef4444;
+            --safe-green: #10b981;
+            --warning-amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            background: #0f172a;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-brand img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .header-title h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--safe-green);
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--safe-green);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.4; }
+            100% { transform: scale(0.9); opacity: 1; }
+        }
+
+        /* Layout Grid */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 340px 1fr 380px;
+            gap: 16px;
+            padding: 16px 20px;
+            height: calc(100vh - 70px);
+        }
+
+        /* Left Sidebar: Video Playlist */
+        .sidebar-playlist {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-heading {
+            padding: 14px 16px;
+            background: #1e293b;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .playlist-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .video-item {
+            background: #0b1120;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .video-item:hover {
+            background: #172554;
+            border-color: var(--accent-blue);
+            transform: translateX(2px);
+        }
+
+        .video-item.active {
+            background: #1e3a8a;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+        }
+
+        .item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .item-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .item-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge-viol {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .badge-safe {
+            background: rgba(16, 185, 129, 0.2);
+            color: #86efac;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .badge-warn {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .item-meta {
+            font-size: 0.70rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Center: Main Screen Player */
+        .player-center {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-wrapper {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            max-height: calc(100vh - 200px);
+            object-fit: contain;
+            outline: none;
+        }
+
+        .player-controls-bar {
+            padding: 12px 16px;
+            background: #0f172a;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .video-info-tag {
+            font-size: 0.80rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #cbd5e1;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-action:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        /* Right Sidebar: Incident Dossier & Gemini Telemetry */
+        .dossier-sidebar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dossier-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .verdict-banner {
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .verdict-banner.violation {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.4));
+            border: 1px solid var(--alert-red);
+        }
+
+        .verdict-banner.dismissed {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 95, 70, 0.4));
+            border: 1px solid var(--safe-green);
+        }
+
+        .verdict-banner.verbal {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(146, 64, 14, 0.4));
+            border: 1px solid var(--warning-amber);
+        }
+
+        .verdict-status {
+            font-size: 0.95rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .verdict-meta {
+            font-size: 0.75rem;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .data-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .data-card-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            padding-bottom: 4px;
+            border-bottom: 1px dashed #1e293b;
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+        }
+
+        .metric-val {
+            font-weight: 700;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .reason-box {
+            background: #1e293b;
+            border-left: 3px solid var(--accent-blue);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.80rem;
+            line-height: 1.4;
+            color: #f1f5f9;
+        }
+
+        .action-box {
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 3px solid var(--accent-cyan);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.80rem;
+            line-height: 1.4;
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        .dossier-actions {
+            padding: 14px 16px;
+            background: #0f172a;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-dossier {
+            width: 100%;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-dossier:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-pdf {
+            background: #334155;
+            color: #f8fafc;
+        }
+
+        .btn-pdf:hover {
+            background: #475569;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1120;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header>
+        <div class="header-brand">
+            <img src="haryana_police_logo.png" alt="Haryana Police Emblem" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/29/Haryana_Police_Logo.png'">
+            <div class="header-title">
+                <h1>HARYANA POLICE SMART SURVEILLANCE</h1>
+                <p>AI Situational & Behavior Intelligence Forensic Player (Two-Tier YOLO-Pose + Gemini Flash)</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <div class="status-pill">
+                <span class="pulse-dot"></span>
+                <span>SYSTEM ONLINE: 9 ACTIVE TEST SCENARIOS</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN 3-COLUMN WORKSPACE -->
+    <main class="main-container">
+
+        <!-- LEFT COLUMN: VIDEO PLAYLIST -->
+        <aside class="sidebar-playlist">
+            <div class="panel-heading">
+                <span>📁 EVIDENTIARY VIDEO SUITE</span>
+                <span style="font-size: 0.70rem; color: var(--accent-cyan); font-family: 'JetBrains Mono';">9 VIDEOS READY</span>
+            </div>
+            <div class="playlist-items" id="playlistContainer">
+                <!-- Injected via JavaScript -->
+            </div>
+        </aside>
+
+        <!-- CENTER COLUMN: CONTINUOUS VIDEO PLAYER -->
+        <section class="player-center">
+            <div class="panel-heading" style="background: #0f172a;">
+                <span id="currentVideoTitle">PLAYING: Loading...</span>
+                <span class="video-info-tag" id="currentVideoMeta">1080p | 25 FPS</span>
+            </div>
+
+            <div class="video-wrapper">
+                <video id="mainVideoPlayer" controls autoplay loop playsinline>
+                    <source id="videoSource" src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="player-controls-bar">
+                <div class="video-info-tag">
+                    <span id="triggerTimeTag">🎯 TRIGGER: Frame #000 (00:00.0s)</span>
+                </div>
+                <div class="control-btns">
+                    <button class="btn-action" onclick="jumpToTrigger()">⏱️ Jump to Alert Trigger</button>
+                    <button class="btn-action" onclick="togglePlayback()">⏯️ Play / Pause</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: OFFICIAL POLICE INCIDENT DOSSIER -->
+        <aside class="dossier-sidebar">
+            <div class="panel-heading">
+                <span>📋 FORENSIC INCIDENT DOSSIER</span>
+                <span style="font-size: 0.70rem; color: #10b981; font-family: 'JetBrains Mono';">VERIFIED</span>
+            </div>
+
+            <div class="dossier-body">
+                <!-- Status Banner -->
+                <div class="verdict-banner violation" id="verdictBanner">
+                    <div class="verdict-status" id="verdictStatusText">🔴 VIOLATION CONFIRMED</div>
+                    <div class="verdict-meta" id="verdictMetaText">CONFIDENCE: 95% | THREAT: MEDIUM</div>
+                </div>
+
+                <!-- Telemetry Metrics Card -->
+                <div class="data-card">
+                    <div class="data-card-title">📐 Stage 1 Kinetic Telemetry (Local YOLO11-Pose)</div>
+                    <div class="metric-row">
+                        <span class="metric-label">Wrist Strike Velocity:</span>
+                        <span class="metric-val" id="metricWrist">652.4 px/s</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Body Overlap (IoU):</span>
+                        <span class="metric-val" id="metricOverlap">0.08</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Trigger Frame & Time:</span>
+                        <span class="metric-val" id="metricTime">Frame #7 (0.17s)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Bounding Box State:</span>
+                        <span class="metric-val" id="metricBox" style="color: var(--alert-red);">RED (Active Alert)</span>
+                    </div>
+                </div>
+
+                <!-- Forensic Reasoning Card -->
+                <div class="data-card">
+                    <div class="data-card-title">🤖 Google Gemini 3.5 Flash Reasoning</div>
+                    <div class="reason-box" id="geminiReasonText">
+                        "Two individuals are engaged in a physical altercation involving grappling and aggressive bodily contact in a public park, surrounded by a crowd."
+                    </div>
+                </div>
+
+                <!-- Police Action Recommended Card -->
+                <div class="data-card">
+                    <div class="data-card-title">👮 Recommended Police Dispatch Action</div>
+                    <div class="action-box" id="policeActionText">
+                        "Dispatch nearby patrol units to intervene, de-escalate the situation, and identify the individuals involved."
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Actions -->
+            <div class="dossier-actions">
+                <button class="btn-dossier" onclick="downloadCurrentVideo()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Annotated MP4 Video
+                </button>
+                <button class="btn-dossier btn-pdf" onclick="openExecutivePdf()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    View Executive PDF Dossier
+                </button>
+            </div>
+        </aside>
+
+    </main>
+
+    <script>
+        // Data Registry for all 9 Rendered Videos
+        const VIDEO_DATABASE = [
+            {
+                id: "fight_2",
+                title: "1. Public Park Altercation (User Video)",
+                category: "PHYSICAL_FIGHT",
+                filename: "cctv_fight_2_full_annotated.mp4",
+                path: "cctv_fight_2_full_annotated.mp4",
+                duration: "13.7s",
+                resolution: "382x848",
+                fps: 40.0,
+                triggerFrame: 7,
+                triggerTime: 0.17,
+                badge: "VIOLATION",
+                badgeClass: "badge-viol",
+                status: "VIOLATION CONFIRMED",
+                confidence: "95%",
+                threat: "MEDIUM",
+                wristVel: "652.4 px/s",
+                overlap: "0.08",
+                boxColor: "RED (Active Alert)",
+                boxColorHex: "#ef4444",
+                reason: "Two individuals are engaged in a physical altercation involving grappling and aggressive bodily contact in a public park, surrounded by a crowd.",
+                action: "Dispatch nearby patrol units to intervene, de-escalate the situation, and identify the individuals involved."
+            },
+            {
+                id: "fight_dance",
+                title: "2. Bar Social Dance (False Alarm)",
+                category: "FALSE_ALARM",
+                filename: "fight_full_annotated.mp4",
+                path: "fight_full_annotated.mp4",
+                duration: "24.8s",
+                resolution: "382x848",
+                fps: 75.5,
+                triggerFrame: 23,
+                triggerTime: 0.30,
+                badge: "FALSE ALARM",
+                badgeClass: "badge-safe",
+                status: "FALSE ALARM (DISMISSED)",
+                confidence: "85%",
+                threat: "NONE",
+                wristVel: "974.9 px/s",
+                overlap: "0.13",
+                boxColor: "GREEN (Dismissed)",
+                boxColorHex: "#10b981",
+                reason: "The individuals are engaged in social dancing and close-proximity interaction in a crowded bar setting, with no signs of aggressive intent, impact, or physical struggle.",
+                action: "No police intervention required; continue routine monitoring of the establishment."
+            },
+            {
+                id: "fights_3",
+                title: "3. Violent Crowd Brawl (User Video)",
+                category: "PHYSICAL_FIGHT",
+                filename: "fights_3_full_annotated.mp4",
+                path: "fights_3_full_annotated.mp4",
+                duration: "7.8s",
+                resolution: "768x432",
+                fps: 24.0,
+                triggerFrame: 5,
+                triggerTime: 0.21,
+                badge: "CRITICAL",
+                badgeClass: "badge-viol",
+                status: "VIOLATION CONFIRMED",
+                confidence: "95%",
+                threat: "HIGH",
+                wristVel: "1579.8 px/s",
+                overlap: "0.13",
+                boxColor: "RED (Critical Alert)",
+                boxColorHex: "#ef4444",
+                reason: "The sequential frames capture a chaotic physical brawl involving multiple individuals grabbing, pushing, and striking each other in a crowd.",
+                action: "Dispatch multiple patrol units immediately to quell the large-scale physical brawl and restore order."
+            },
+            {
+                id: "cctv_fight",
+                title: "4. Verbal Standoff Dispute (User Video)",
+                category: "VERBAL_DISPUTE",
+                filename: "cctv_fight_full_annotated.mp4",
+                path: "cctv_fight_full_annotated.mp4",
+                duration: "14.0s",
+                resolution: "382x848",
+                fps: 28.9,
+                triggerFrame: 115,
+                triggerTime: 3.97,
+                badge: "VERBAL ONLY",
+                badgeClass: "badge-warn",
+                status: "FALSE ALARM (VERBAL ONLY)",
+                confidence: "88%",
+                threat: "LOW",
+                wristVel: "221.7 px/s",
+                overlap: "0.00",
+                boxColor: "GREEN (Non-Violent)",
+                boxColorHex: "#10b981",
+                reason: "The sequence shows a group of individuals gathering and engaging in a verbal standoff without active physical striking, punching, or violent assault.",
+                action: "Dispatch nearby patrol unit to observe the gathering and prevent potential escalation."
+            },
+            {
+                id: "cctv_fight_2",
+                title: "5. Street Shoving Altercation (User Video)",
+                category: "PHYSICAL_FIGHT",
+                filename: "cctv_fight_2_full_annotated.mp4",
+                path: "cctv_fight_2_full_annotated.mp4",
+                duration: "12.6s",
+                resolution: "382x848",
+                fps: 59.5,
+                triggerFrame: 8,
+                triggerTime: 0.13,
+                badge: "VIOLATION",
+                badgeClass: "badge-viol",
+                status: "VIOLATION CONFIRMED",
+                confidence: "88%",
+                threat: "MEDIUM",
+                wristVel: "460.8 px/s",
+                overlap: "0.00",
+                boxColor: "RED (Active Shoving)",
+                boxColorHex: "#ef4444",
+                reason: "An aggressive physical altercation is taking place on a public street where two individuals engage in direct physical grabbing and shoving while bystanders observe.",
+                action: "Dispatch local patrol unit immediately to intervene, de-escalate the dispute, and secure the area."
+            },
+            {
+                id: "boxing_fight",
+                title: "6. Boxing Match vs Brawl (Lab Test)",
+                category: "FALSE_ALARM",
+                filename: "01_physical_fight_full_annotated.mp4",
+                path: "01_physical_fight_full_annotated.mp4",
+                duration: "10.0s",
+                resolution: "960x528",
+                fps: 25.0,
+                triggerFrame: 28,
+                triggerTime: 1.12,
+                badge: "SPORTS DISMISSED",
+                badgeClass: "badge-safe",
+                status: "FALSE ALARM (SANCTIONED SPORT)",
+                confidence: "98%",
+                threat: "NONE",
+                wristVel: "788.9 px/s",
+                overlap: "0.00",
+                boxColor: "GREEN (Sanctioned Match)",
+                boxColorHex: "#10b981",
+                reason: "The video shows a sanctioned boxing match taking place inside a ring under active referee supervision rather than an unlawful violent assault.",
+                action: "No law enforcement intervention required as this is an organized sporting event."
+            },
+            {
+                id: "protest_march",
+                title: "7. Roadway Protest March (1080p HD)",
+                category: "PROTEST",
+                filename: "02_protest_march_full_annotated.mp4",
+                path: "02_protest_march_full_annotated.mp4",
+                duration: "10.0s",
+                resolution: "1920x1080 (FHD)",
+                fps: 25.0,
+                triggerFrame: 118,
+                triggerTime: 4.72,
+                badge: "MASS PROTEST",
+                badgeClass: "badge-viol",
+                status: "VIOLATION CONFIRMED",
+                confidence: "98%",
+                threat: "MEDIUM",
+                wristVel: "Flow Coherence: High",
+                overlap: "0.32",
+                boxColor: "RED (Road Blockade)",
+                boxColorHex: "#ef4444",
+                reason: "A massive crowd holding protest banners and signs is actively marching along public roadways and gathering in high-density numbers around civic buildings.",
+                action: "Dispatch traffic management and crowd safety units to monitor demonstration and maintain order."
+            },
+            {
+                id: "crowd_surge",
+                title: "8. Dense Plaza Gathering (1080p HD)",
+                category: "CROWD",
+                filename: "03_crowd_surge_full_annotated.mp4",
+                path: "03_crowd_surge_full_annotated.mp4",
+                duration: "8.3s",
+                resolution: "1920x1080 (FHD)",
+                fps: 30.0,
+                triggerFrame: 12,
+                triggerTime: 0.40,
+                badge: "CROWD SURGE",
+                badgeClass: "badge-warn",
+                status: "VIOLATION CONFIRMED",
+                confidence: "92%",
+                threat: "LOW",
+                wristVel: "Density: 5.8 pers/cluster",
+                overlap: "0.22",
+                boxColor: "RED (Crowd Surge)",
+                boxColorHex: "#ef4444",
+                reason: "A sizable crowd displaying political flags and anti-war protest signs has gathered in a high-foot-traffic public plaza.",
+                action: "Monitor the peaceful demonstration to ensure public safety and prevent sidewalk or traffic blockages."
+            },
+            {
+                id: "public_drinking",
+                title: "9. Pool/Waterpark Gathering (False Alarm)",
+                category: "FALSE_ALARM",
+                filename: "04_public_drinking_full_annotated.mp4",
+                path: "04_public_drinking_full_annotated.mp4",
+                duration: "8.3s",
+                resolution: "854x480",
+                fps: 30.0,
+                triggerFrame: 2,
+                triggerTime: 0.07,
+                badge: "RECREATION",
+                badgeClass: "badge-safe",
+                status: "FALSE ALARM (DISMISSED)",
+                confidence: "95%",
+                threat: "NONE",
+                wristVel: "Cluster: 5 persons",
+                overlap: "0.15",
+                boxColor: "GREEN (Harmless)",
+                boxColorHex: "#10b981",
+                reason: "The images show a group of people in swimwear posing for a video at a pool/waterpark facility, with no alcoholic beverages or public drinking detected.",
+                action: "No law enforcement action required; dismiss false alarm."
+            }
+        ];
+
+        let currentActiveIdx = 0;
+        const player = document.getElementById('mainVideoPlayer');
+        const videoSource = document.getElementById('videoSource');
+
+        // Render Playlist
+        function renderPlaylist() {
+            const container = document.getElementById('playlistContainer');
+            container.innerHTML = '';
+
+            VIDEO_DATABASE.forEach((vid, idx) => {
+                const item = document.createElement('div');
+                item.className = `video-item ${idx === currentActiveIdx ? 'active' : ''}`;
+                item.onclick = () => selectVideo(idx);
+
+                item.innerHTML = `
+                    <div class="item-top">
+                        <span class="item-title">${vid.title}</span>
+                        <span class="item-badge ${vid.badgeClass}">${vid.badge}</span>
+                    </div>
+                    <div class="item-meta">
+                        ${vid.resolution} | ${vid.fps} FPS | Trigger: ${vid.triggerTime}s
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Select and Load Video
+        function selectVideo(idx) {
+            currentActiveIdx = idx;
+            const data = VIDEO_DATABASE[idx];
+
+            renderPlaylist();
+
+            // Load Video Source (Local fallback logic)
+            // Try static/evidence_videos or relative local
+            videoSource.src = `evidence_videos/${data.filename}`;
+            player.load();
+            player.play().catch(e => console.log('Autoplay muted requirement:', e));
+
+            // Update UI Details
+            document.getElementById('currentVideoTitle').innerText = `PLAYING: ${data.title}`;
+            document.getElementById('currentVideoMeta').innerText = `${data.resolution} | ${data.fps} FPS | ${data.duration}`;
+            document.getElementById('triggerTimeTag').innerText = `🎯 TRIGGER: Frame #${data.triggerFrame} (${data.triggerTime}s)`;
+
+            // Update Dossier Banner
+            const banner = document.getElementById('verdictBanner');
+            banner.className = 'verdict-banner ' + (data.status.includes('VIOLATION') ? 'violation' : (data.status.includes('VERBAL') ? 'verbal' : 'dismissed'));
+            document.getElementById('verdictStatusText').innerText = data.status.includes('VIOLATION') ? `🔴 ${data.status}` : (data.status.includes('VERBAL') ? `🟡 ${data.status}` : `🟢 ${data.status}`);
+            document.getElementById('verdictMetaText').innerText = `CONFIDENCE: ${data.confidence} | THREAT: ${data.threat}`;
+
+            // Update Metrics
+            document.getElementById('metricWrist').innerText = data.wristVel;
+            document.getElementById('metricOverlap').innerText = data.overlap;
+            document.getElementById('metricTime').innerText = `Frame #${data.triggerFrame} (${data.triggerTime}s)`;
+            const boxElem = document.getElementById('metricBox');
+            boxElem.innerText = data.boxColor;
+            boxElem.style.color = data.boxColorHex;
+
+            // Update Reasoning & Action
+            document.getElementById('geminiReasonText').innerText = `"${data.reason}"`;
+            document.getElementById('policeActionText').innerText = `"${data.action}"`;
+        }
+
+        // Jump to alert trigger frame
+        function jumpToTrigger() {
+            const data = VIDEO_DATABASE[currentActiveIdx];
+            if (player && data) {
+                player.currentTime = Math.max(0, data.triggerTime - 0.5);
+                player.play();
+            }
+        }
+
+        function togglePlayback() {
+            if (player.paused) {
+                player.play();
+            } else {
+                player.pause();
+            }
+        }
+
+        function downloadCurrentVideo() {
+            const data = VIDEO_DATABASE[currentActiveIdx];
+            const a = document.createElement('a');
+            a.href = `evidence_videos/${data.filename}`;
+            a.download = data.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function openExecutivePdf() {
+            window.open('Haryana_Police_Behavior_Disaster_Intelligence_Dossier.pdf', '_blank');
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            selectVideo(0);
+        };
+    </script>
+</body>
+</html>

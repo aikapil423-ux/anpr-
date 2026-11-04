@@ -1,0 +1,127 @@
+/* Light presentation for the ANPR workspace and login. */
+:root,body.ui-light,body.ui-simple{color-scheme:light;--bg-body:#f4f7fb;--bg-main:#f4f7fb;--bg-card:#fff;--bg-secondary:#eef3f9;--border-color:#cbd5e1;--text-primary:#172033;--text-secondary:#475569;--text-muted:#64748b}
+body.ui-light{background:#f4f7fb;color:#172033}
+.ui-light .app-sidebar,.ui-light .app-header,.ui-light .modal-content,.ui-light .panel-card,.ui-light .login-card,.ui-light .activity-column{background:#fff!important;color:#172033;border-color:#cbd5e1!important}
+.ui-light .sidebar-nav-item,.ui-light .modal-header,.ui-light .modal-body,.ui-light .modal-footer{color:#172033}
+.ui-light input,.ui-light select,.ui-light textarea{background:#fff!important;color:#172033!important;border-color:#b8c6d8!important}
+.ui-light input::placeholder,.ui-light textarea::placeholder{color:#6b7c93}
+.ui-light .btn-primary,.ui-light button[type=submit],.ui-light .btn-login{color:#fff!important}
+.ui-light .sidebar-nav-item.active{background:#e8efff!important;color:#1d4ed8!important}
+.ui-light .btn-secondary{background:#eef3f9!important;color:#253b59!important;border-color:#cbd5e1!important}
+.ui-light table,.ui-light th,.ui-light td{border-color:#dbe3ee}
+.ui-light .unified-result-grid,.ui-light .session-inner-grid{grid-template-columns:minmax(0,1fr)!important}
+.ui-light .activity-grid{grid-template-columns:minmax(0,1fr)!important}
+.ui-light .modal-backdrop{background:rgba(30,41,59,.35)!important}
+.ui-light .sidebar-brand-text h2,.ui-light .header-view-title{color:#172033!important}
+.ui-light .feed-main-tab{color:#334155!important;background:#eef3f9!important}
+.ui-light .feed-main-tab.active{color:#fff!important;background:#4f46e5!important}
+.ui-light .login-card{box-shadow:0 16px 48px #17203312}
+.ui-light .nav-badge{background:#e8eef7!important;color:#334155!important}
+.ui-light :focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.ui-light .cam-grid-container,.ui-light .cam-tile,.ui-light .cam-tile-body,.ui-light .tile-standby,.ui-light #singleCamViewport,.ui-light #screenCenterMsg{background:#fff!important;color:#52647c!important;border-color:#cbd5e1!important}
+.ui-light .cam-grid-container{background:#e8eef6!important}
+.ui-light .cam-tile-header,.ui-light .cam-tile-footer{background:#f1f5f9!important;color:#334155!important}
+.ui-light .tile-standby svg,.ui-light #screenCenterMsg svg{color:#64748b!important;stroke:#64748b!important}
+.ui-light .tile-standby button{background:#2563eb!important;color:#fff!important}
+.ui-light .knl-map-dialog{background:#fff!important;color:#172033!important}
+/* Keep headings, tabs and fixed legacy text readable on light surfaces. */
+.ui-light h1,.ui-light h2,.ui-light h3,.ui-light h4,.ui-light h5,.ui-light h6,.ui-light label,.ui-light summary,.ui-light .trail-subtab-btn,.ui-light .panel-title,.ui-light .section-title{color:#111827!important}
+.ui-light [style*="color: #fff"],.ui-light [style*="color:#fff"],.ui-light [style*="color: white"],.ui-light [style*="color:white"]{color:#111827!important}
+.ui-light .trail-subtab-btn span,.ui-light .trail-subtab-btn.active,.ui-light .trail-subtab-btn.active span{color:#111827!important}
+.ui-light .btn-primary,.ui-light .btn-primary span,.ui-light button[type=submit],.ui-light button[type=submit] span,.ui-light .btn-login,.ui-light .tile-standby button,.ui-light .tile-standby button span,.ui-light .feed-main-tab.active,.ui-light .feed-main-tab.active span{color:#fff!important}
+/* Vehicle activity: readable light cards for both live feeds and uploaded media. */
+.ui-light .activity-dual-columns{grid-template-columns:minmax(0,1fr)!important}
+.ui-light .activity-column-header{background:#f8fafc!important;border-color:#cbd5e1}
+.ui-light .activity-column-title,.ui-light .fresh-card-title{color:#111827!important}
+.ui-light .fresh-card-row{background:#fff;border:1px solid #d6e0ec;box-shadow:0 1px 3px #17203308}
+.ui-light .fresh-card-row:hover{background:#f1f5f9;border-color:#94a3b8}
+.ui-light .fresh-card-meta{color:#475569!important;line-height:1.5;flex-wrap:wrap}
+.ui-light .fresh-card-meta>span:first-child{color:#92400e!important}
+.ui-light .fresh-card-row .conf-pill{background:#dcfce7!important;color:#166534!important;border-color:#86efac!important;font-weight:700}
+.ui-light .fresh-card-row .cap-rank-badge{background:#fef3c7!important;color:#78350f!important;border-color:#fcd34d!important}
+.ui-light .fresh-card-row .cap-rank-badge.newest{background:#fbbf24!important;color:#422006!important}
+.ui-light .fresh-card-row.is-hotlist{background:#fff1f2!important;border-color:#fda4af!important;box-shadow:none!important}
+.ui-light .fresh-card-row.is-traffic-violation,.ui-light .fresh-card-row.is-maybe-suspect{background:#fffbeb!important;border-color:#fbbf24!important;box-shadow:none!important}
+.ui-light .fresh-card-row.is-clean-verified{background:#f0fdf4!important;border-color:#86efac!important}
+
+/* Keep primary actions legible while hovered, focused, or pressed. */
+.ui-light .btn-primary:hover,.ui-light .btn-primary:focus-visible{background-color:#1d4ed8;color:#fff!important}
+.ui-light .btn-primary:active{background-color:#1e40af;color:#fff!important}
+.ui-light .btn-primary:hover span,.ui-light .btn-primary:focus-visible span{color:#fff!important}
+.ui-light .btn-secondary:hover{background:#e2e8f0!important;color:#172033!important}
+
+/* Number plates and registry details must retain contrast on white cards. */
+.ui-light .hsrp-plate,.ui-light .hsrp-plate-text{color:#111827!important}
+.ui-light .hsrp-plate{background:#fff!important;border-color:#334155;box-shadow:0 1px 3px #1720331a}
+.ui-light .hsrp-ind-strip{background:#1d4ed8!important;color:#fff!important;border-color:#1d4ed8}
+.ui-light .hsrp-ind-strip span{color:#fff!important}
+.ui-light .db-card-case-meta{background:#f1f5f9!important;border-color:#cbd5e1!important}
+.ui-light .db-card-case-meta,.ui-light .db-card-case-meta span{color:#172033!important}
+/* Capture inspection: readable labels and status checks on light surfaces. */
+.ui-light #captureDetailModal .pipe-stage-col-tag,.ui-light #captureDetailModal .pipe-stage-col-val{color:#172033!important}
+.ui-light #captureDetailModal .pipe-stage-col-lbl,.ui-light #captureDetailModal .pipe-stage-col-sub{color:#475569!important}
+.ui-light #captureDetailModal .pipe-stage-col-num{color:#fff!important}
+.ui-light #captureDetailModal .pipe-stage-col-imgbox>div,.ui-light #captureDetailModal .pipe-stage-col-imgbox>div>span{color:#172033!important}
+.ui-light #captureDetailModal .pipe-tab-btn{background:#fff;color:#172033!important;border:1px solid #cbd5e1}
+.ui-light #captureDetailModal .pipe-tab-btn:hover{background:#e2e8f0;color:#172033!important}
+.ui-light #captureDetailModal .pipe-tab-btn.active{background:#1d4ed8;color:#fff!important;border-color:#1d4ed8}
+.ui-light #captureDetailModal .pipe-tab-btn.active span{color:#fff!important}
+.ui-light #captureDetailModal .pipe-view-nav-tabs>div:last-child{color:#047857!important}
+.ui-light #captureDetailModal .pipe-stage-col-row{gap:10px;align-items:flex-start}
+.ui-light #captureDetailModal .pipe-stage-col-val{max-width:none!important;white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere;text-align:right}
+
+/* Comfortable typography across the dashboard, login, and inspection dialogs. */
+html{font-size:16px}
+body.ui-light{font-weight:500;line-height:1.5;text-rendering:optimizeLegibility}
+.ui-light button,.ui-light input,.ui-light select,.ui-light textarea{font-family:inherit;font-size:15px;font-weight:600;line-height:1.4}
+.ui-light label,.ui-light summary,.ui-light th{font-weight:650!important}
+.ui-light h1,.ui-light h2,.ui-light h3,.ui-light h4{font-weight:700!important;line-height:1.3}
+.ui-light .nav-label{font-size:15px!important;font-weight:600;line-height:1.4}
+.ui-light .sidebar-nav-item{min-height:48px}
+.ui-light .fresh-card-title{font-size:17px!important;font-weight:700}
+.ui-light .fresh-card-meta,.ui-light .knl-coords,.ui-light .knl-caption{font-size:14px!important;font-weight:500;line-height:1.5}
+.ui-light .conf-pill,.ui-light .count-pill,.ui-light .nav-badge{font-size:14px!important;font-weight:650!important}
+.ui-light .pipe-stage-col-head{flex-wrap:wrap;gap:6px}
+.ui-light .pipe-stage-col-tag,.ui-light .pipe-stage-col-lbl,.ui-light .pipe-stage-col-val,.ui-light .pipe-stage-col-sub{font-size:14px!important;line-height:1.45}
+.ui-light .pipe-stage-col-num{min-width:22px;min-height:22px;font-size:14px!important}
+.ui-light .pipe-stage-col-imgbox{min-height:112px;height:auto}
+.ui-light .pipe-stage-col-imgbox>div{font-size:14px!important;line-height:1.4;box-sizing:border-box}
+.ui-light .db-card{gap:12px}
+.ui-light .db-card .hsrp-plate{min-height:30px;height:auto!important}
+.ui-light .db-card .hsrp-plate-text{font-size:15px!important;letter-spacing:.05em;line-height:1.5}
+.ui-light .db-card-case-meta{font-size:14px!important;flex-wrap:wrap;gap:6px}
+.ui-light .knl-combo-trigger{font-size:15px!important;min-height:46px}
+.ui-light .knl-combo-panel select{font-size:15px!important}
+.ui-light .form-group small,.ui-light .modal-sub{font-size:14px!important;line-height:1.5}
+/* Explicit normal, hover, focus and selected colours for light-theme controls. */
+body.ui-light .btn-primary{background:#2563eb!important;border-color:#2563eb!important;color:#fff!important}
+body.ui-light .btn-primary:hover,body.ui-light .btn-primary:focus-visible{background:#1d4ed8!important;border-color:#1d4ed8!important;color:#fff!important}
+body.ui-light .btn-primary:active{background:#1e40af!important;color:#fff!important}
+body.ui-light .btn-primary span,body.ui-light .btn-primary:hover span{color:#fff!important}
+body.ui-light .btn-emerald{background:#047857!important;color:#fff!important}
+body.ui-light .btn-emerald:hover,body.ui-light .btn-emerald:focus-visible{background:#065f46!important;color:#fff!important}
+body.ui-light .btn-secondary,body.ui-light .filter-btn,body.ui-light .view-mode-btn,body.ui-light .hud-preset-btn,body.ui-light .trail-subtab-btn,body.ui-light .model-target-btn,body.ui-light .district-tab-btn{background:#f1f5f9!important;color:#172033!important;border:1px solid #cbd5e1}
+body.ui-light .btn-secondary:hover,body.ui-light .filter-btn:hover,body.ui-light .view-mode-btn:hover,body.ui-light .hud-preset-btn:hover,body.ui-light .trail-subtab-btn:hover,body.ui-light .model-target-btn:hover,body.ui-light .district-tab-btn:hover{background:#e2e8f0!important;color:#111827!important;border-color:#94a3b8}
+body.ui-light .filter-btn.active,body.ui-light .view-mode-btn.active,body.ui-light .hud-preset-btn.active,body.ui-light .model-target-btn.active,body.ui-light .district-tab-btn.active{background:#1d4ed8!important;color:#fff!important;border-color:#1d4ed8}
+body.ui-light .filter-btn.active span,body.ui-light .view-mode-btn.active span,body.ui-light .model-target-btn.active span,body.ui-light .district-tab-btn.active span{color:#fff!important}
+body.ui-light .btn-danger{background:#fff1f2!important;color:#b91c1c!important;border:1px solid #fda4af!important}
+body.ui-light .btn-danger:hover,body.ui-light .btn-danger:focus-visible{background:#ffe4e6!important;color:#991b1b!important;border-color:#fb7185!important}
+body.ui-light .sidebar-nav-item{color:#253b59!important}
+body.ui-light .sidebar-nav-item:hover,body.ui-light .sidebar-nav-item:focus-visible,body.ui-light .sidebar-nav-item.active{background:#e0eaff!important;color:#1e40af!important}
+body.ui-light .sidebar-nav-item .nav-label,body.ui-light .sidebar-nav-item:hover .nav-label{color:inherit!important}
+body.ui-light .sidebar-account-info,body.ui-light .sidebar-account-name{color:#172033!important}
+body.ui-light .header-dropdown-item,body.ui-light .custom-model-dd-btn,body.ui-light .custom-model-dd-item,body.ui-light .sds-trigger,body.ui-light .sds-option{background:#fff!important;color:#172033!important}
+body.ui-light .header-dropdown-item:hover,body.ui-light .custom-model-dd-btn:hover,body.ui-light .custom-model-dd-item:hover,body.ui-light .sds-trigger:hover,body.ui-light .sds-option:hover{background:#e8efff!important;color:#1e40af!important}
+body.ui-light .header-dropdown-item span,body.ui-light .custom-dd-label,body.ui-light .custom-item-name,body.ui-light .sds-option span{color:inherit!important}
+body.ui-light .header-dropdown-item.item-logout{color:#b91c1c!important}
+body.ui-light .db-card,body.ui-light .vehicle-card,body.ui-light .captured-card,body.ui-light .captured-list-row{background:#fff;color:#172033}
+body.ui-light .db-card:hover,body.ui-light .vehicle-card:hover,body.ui-light .captured-card:hover,body.ui-light .captured-list-row:hover{background:#f1f5f9;color:#172033;border-color:#94a3b8}
+body.ui-light .badge-verified{background:#dcfce7!important;color:#166534!important}
+body.ui-light .badge-unverified,body.ui-light .badge-amber-violation{background:#fef3c7!important;color:#92400e!important}
+body.ui-light .badge-case-active{background:#ffe4e6!important;color:#991b1b!important}
+body.ui-light .badge-lost-active{background:#fef3c7!important;color:#92400e!important}
+body.ui-light button:disabled,body.ui-light input:disabled,body.ui-light select:disabled{opacity:1!important;background:#e2e8f0!important;color:#64748b!important;border-color:#cbd5e1!important;cursor:not-allowed}
+body.ui-light button:disabled span{color:#64748b!important}
+body.ui-light input::placeholder,body.ui-light textarea::placeholder{color:#52647c!important;opacity:1}
+body.ui-light a:not(.btn){color:#1d4ed8}
+body.ui-light a:not(.btn):hover{color:#1e40af}

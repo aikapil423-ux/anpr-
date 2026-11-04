@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Traffic Violations & Penalty Manager - Prototype Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-surface: #0f172a;
+            --bg-card: #131d35;
+            --bg-elevated: #1a2644;
+            --border-dim: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(239, 68, 68, 0.35);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.2);
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            padding: 24px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Demo Header Banner */
+        .demo-banner {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(59, 130, 246, 0.15));
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+        }
+
+        .demo-title-group h1 {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .demo-badge-pill {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--accent-red);
+            color: #fca5a5;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .demo-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .storage-status-chip {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        /* Metrics Row */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px 20px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .metric-card.active {
+            background: rgba(19, 29, 53, 0.95);
+            border: 2px solid var(--card-color, var(--accent-blue));
+            box-shadow: 0 0 20px var(--card-glow, rgba(59, 130, 246, 0.3));
+        }
+
+        .metric-card.active::after {
+            content: 'ACTIVE FILTER';
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--card-color, #fff);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--card-color, var(--accent-blue));
+        }
+
+        .metric-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 800;
+            margin-top: 6px;
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Violations Workspace Container */
+        .workspace-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Filter & Search Bar */
+        .filter-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        .search-input-group {
+            position: relative;
+            flex: 1;
+            max-width: 420px;
+        }
+
+        .search-input-group input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            padding: 10px 14px 10px 38px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input-group input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-pill.active {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--accent-red);
+            color: #fca5a5;
+        }
+
+        /* Violations List Cards */
+        .violations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .violation-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 190px 1fr 280px;
+            gap: 22px;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .violation-card:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .violation-card.flagged {
+            border-left: 5px solid var(--accent-red);
+        }
+
+        /* Left: Evidence Media Thumbnail */
+        .evidence-thumb-box {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-dim);
+            background: #000;
+            height: 160px;
+            cursor: pointer;
+        }
+
+        .evidence-thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .evidence-thumb-box:hover img {
+            transform: scale(1.05);
+        }
+
+        .evidence-overlay-pill {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Center: Details & Dynamic MV Sections */
+        .details-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .plate-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .plate-number-badge {
+            background: #000;
+            border: 2px solid #facc15;
+            color: #facc15;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 16px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            letter-spacing: 0.08em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.15);
+        }
+
+        .violation-type-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-triple {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid var(--accent-red);
+        }
+
+        .badge-no-helmet {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid var(--accent-amber);
+        }
+
+        .meta-line {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 18px;
+            margin-bottom: 14px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* MV Act Sections Applied Container */
+        .applied-sections-container {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .applied-sections-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .applied-sections-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        /* Add Section Button with relative positioning for popup */
+        .add-section-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-add-section {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px dashed var(--accent-blue);
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-add-section:hover {
+            background: rgba(59, 130, 246, 0.28);
+            border-color: #60a5fa;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Badges for added sections */
+        .sections-badges-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .section-tag-badge {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 7px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #f1f5f9;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .section-tag-badge .sec-code {
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .section-tag-badge .sec-fine {
+            color: #4ade80;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .btn-remove-sec {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .btn-remove-sec:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Right: Penalty Calculation & Controls */
+        .penalty-col {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .helmet-counter-block {
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .counter-pill-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .btn-counter {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-dim);
+            color: #fff;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-counter:hover:not(:disabled) {
+            background: var(--accent-blue);
+        }
+
+        .btn-counter:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .counter-val {
+            flex: 1;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: #facc15;
+        }
+
+        .penalty-total-box {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.6));
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            padding: 12px 14px;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .total-fine-label {
+            font-size: 11px;
+            color: #fca5a5;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .total-fine-amount {
+            font-family: var(--font-mono);
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* FLOATING SEARCHABLE MV ACT SECTIONS POPOVER (THE CORE REQUIREMENT) */
+        /* ------------------------------------------------------------- */
+        .mv-sections-popover {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 380px;
+            max-height: 380px;
+            background: #0b1120;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(59, 130, 246, 0.15);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+            animation: popDown 0.15s ease-out forwards;
+        }
+
+        .mv-sections-popover.open {
+            display: flex;
+        }
+
+        @keyframes popDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .popover-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-dim);
+            background: rgba(30, 41, 59, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .popover-search-input {
+            width: 100%;
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 12px;
+            outline: none;
+            font-family: var(--font-sans);
+        }
+
+        .popover-search-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+        }
+
+        .popover-list {
+            overflow-y: auto;
+            max-height: 300px;
+            padding: 6px;
+        }
+
+        .popover-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .popover-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .popover-item {
+            padding: 8px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            transition: background 0.15s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .popover-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .popover-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popover-sec-code {
+            color: #38bdf8;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .popover-sec-fine {
+            color: #4ade80;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        .popover-sec-title {
+            font-size: 11px;
+            color: #cbd5e1;
+            line-height: 1.3;
+        }
+
+        /* Modal Preview */
+        .evidence-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .evidence-modal.active {
+            display: flex;
+        }
+
+        .modal-content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: var(--bg-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        .modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .modal-img-wrap {
+            max-height: 520px;
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        .modal-img-wrap img {
+            max-height: 520px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .btn-close-modal {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .btn-close-modal:hover {
+            background: var(--accent-red);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Clean Header (Red Marked Elements Removed) -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.02em;">
+            <span>🚨 Traffic Violators</span>
+        </h1>
+    </div>
+
+    <!-- Interactive Metrics Row (Acts as Filters - Green Circles with Yellow Functionality) -->
+    <div class="metrics-grid">
+        <div class="metric-card active" id="metric-all" style="--card-color: var(--accent-red); --card-glow: rgba(239, 68, 68, 0.35);" onclick="selectMetricFilter('ALL', this)" title="Click to view all violations">
+            <div class="metric-title">Today's Violations</div>
+            <div class="metric-value">2 <span style="font-size: 13px; color: var(--accent-red);">LIVE</span></div>
+            <div class="metric-sub">Motorcycles & Scooters Detected (All)</div>
+        </div>
+        <div class="metric-card" id="metric-triple" style="--card-color: var(--accent-amber); --card-glow: rgba(245, 158, 11, 0.35);" onclick="selectMetricFilter('TRIPLE', this)" title="Click to filter Triple Riding only">
+            <div class="metric-title">Triple Riding Events</div>
+            <div class="metric-value">1</div>
+            <div class="metric-sub">Sec 128 r/w 194C MV Act</div>
+        </div>
+        <div class="metric-card" id="metric-nohelmet" style="--card-color: var(--accent-cyan); --card-glow: rgba(6, 182, 212, 0.35);" onclick="selectMetricFilter('NO_HELMET', this)" title="Click to filter Without Helmet only">
+            <div class="metric-title">Without Helmet Violations</div>
+            <div class="metric-value">2</div>
+            <div class="metric-sub">Sec 129 r/w 194D MV Act</div>
+        </div>
+        <div class="metric-card" id="metric-penalties" style="--card-color: var(--accent-emerald); --card-glow: rgba(16, 185, 129, 0.35);" onclick="selectMetricFilter('ALL', this)" title="Total Assessed Fines">
+            <div class="metric-title">Total Assessed Penalties</div>
+            <div class="metric-value" id="globalTotalFine">₹3,000</div>
+            <div class="metric-sub">Calculated via Official MV Act</div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="workspace-card">
+        
+        <!-- Filter Bar (Yellow Filter Buttons Removed; Search is unified) -->
+        <div class="filter-toolbar">
+            <div class="search-input-group" style="max-width: 100%;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="filterInput" placeholder="Filter by plate number (e.g. HR20, DL01) or camera location..." oninput="handleFilter(this.value)">
+            </div>
+        </div>
+
+        <!-- Violations List -->
+        <div class="violations-list" id="violationsList">
+            
+            <!-- CARD 1: RAHUL SOLO RIDER WITHOUT HELMET -->
+            <div class="violation-card flagged" id="card-rahul" data-plate="HR20BE1054" data-type="NO_HELMET">
+                <!-- Thumbnail -->
+                <div class="evidence-thumb-box" onclick="openEvidenceModal('/static/annotated_scenario_2_solo_rider.jpg', 'HR20BE1054 - Riding Without Helmet')">
+                    <img src="/static/annotated_scenario_2_solo_rider.jpg" alt="Rahul Evidence">
+                    <div class="evidence-overlay-pill">
+                        <span>🔍 Click to View Full Evidence</span>
+                    </div>
+                </div>
+
+                <!-- Center: Info & Sections -->
+                <div class="details-col">
+                    <div>
+                        <div class="plate-header">
+                            <span class="plate-number-badge">HR20BE1054</span>
+                            <span class="violation-type-badge badge-no-helmet">
+                                ⚠️ SOLO DRIVER WITHOUT HELMET
+                            </span>
+                        </div>
+                        <div class="meta-line">
+                            <span class="meta-item">📍 <strong>Camera:</strong> Sector 14 Junction (Cam-02)</span>
+                            <span class="meta-item">🕒 <strong>Detected:</strong> Today, 10:32 AM</span>
+                            <span class="meta-item">👤 <strong>Rider Count:</strong> 1 (Driver)</span>
+                        </div>
+                    </div>
+
+                    <!-- Applied MV Act Sections -->
+                    <div class="applied-sections-container">
+                        <div class="applied-sections-header">
+                            <span class="applied-sections-title">Applied MV Act Offenses & Penalty</span>
+                            
+                            <!-- Add Section Button with Popover -->
+                            <div class="add-section-wrapper">
+                                <button type="button" class="btn-add-section" onclick="window.toggleMvMenu('popover-rahul', event)">
+                                    <span>➕</span> Add MV Act Section
+                                </button>
+                                
+                                <!-- Floating Search Popover -->
+                                <div class="mv-sections-popover" id="popover-rahul">
+                                    <div class="popover-header">
+                                        <input type="text" class="popover-search-input" placeholder="Search section or keyword (e.g. 184, rash, phone, red, puc)..." oninput="filterMvList(this, 'list-rahul')">
+                                    </div>
+                                    <div class="popover-list" id="list-rahul">
+                                        <!-- Dynamically generated MV sections -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Section Badges Row -->
+                        <div class="sections-badges-row" id="badges-rahul">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Penalty & Helmet Multiplier -->
+                <div class="penalty-col">
+                    <div class="helmet-counter-block">
+                        <div class="control-label">
+                            <span>Unhelmeted Riders</span>
+                            <span style="color: #94a3b8; font-weight: 500;">(Driver Only)</span>
+                        </div>
+                        <div class="counter-pill-group">
+                            <button class="btn-counter" onclick="adjustHelmet('rahul', -1)">−</button>
+                            <span class="counter-val" id="helmet-count-rahul">1 Rider (₹1,000)</span>
+                            <button class="btn-counter" onclick="adjustHelmet('rahul', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="penalty-total-box">
+                        <div class="total-fine-label">Total Fine Amount</div>
+                        <div class="total-fine-amount" id="total-fine-rahul">₹1,000</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 2: REAL TRIPLE RIDING WITH 3 RIDERS -->
+            <div class="violation-card flagged" id="card-triple" data-plate="DL08AB4421" data-type="TRIPLE">
+                <!-- Thumbnail -->
+                <div class="evidence-thumb-box" onclick="openEvidenceModal('/static/annotated_scenario_1_triple_riding.jpg', 'DL08AB4421 - Triple Riding + No Helmet')">
+                    <img src="/static/annotated_scenario_1_triple_riding.jpg" alt="Triple Riding Evidence">
+                    <div class="evidence-overlay-pill">
+                        <span>🔍 Click to View Full Evidence</span>
+                    </div>
+                </div>
+
+                <!-- Center: Info & Sections -->
+                <div class="details-col">
+                    <div>
+                        <div class="plate-header">
+                            <span class="plate-number-badge">DL08AB4421</span>
+                            <span class="violation-type-badge badge-triple">
+                                🚨 TRIPLE RIDING (3 RIDERS)
+                            </span>
+                        </div>
+                        <div class="meta-line">
+                            <span class="meta-item">📍 <strong>Camera:</strong> NH-44 Toll Plaza (Cam-01)</span>
+                            <span class="meta-item">🕒 <strong>Detected:</strong> Today, 10:14 AM</span>
+                            <span class="meta-item">👥 <strong>Rider Count:</strong> 3 on Two-Wheeler</span>
+                        </div>
+                    </div>
+
+                    <!-- Applied MV Act Sections -->
+                    <div class="applied-sections-container">
+                        <div class="applied-sections-header">
+                            <span class="applied-sections-title">Applied MV Act Offenses & Penalty</span>
+                            
+                            <!-- Add Section Button with Popover -->
+                            <div class="add-section-wrapper">
+                                <button type="button" class="btn-add-section" onclick="window.toggleMvMenu('popover-triple', event)">
+                                    <span>➕</span> Add MV Act Section
+                                </button>
+                                
+                                <!-- Floating Search Popover -->
+                                <div class="mv-sections-popover" id="popover-triple">
+                                    <div class="popover-header">
+                                        <input type="text" class="popover-search-input" placeholder="Search section or keyword (e.g. 184, rash, phone, red, puc)..." oninput="filterMvList(this, 'list-triple')">
+                                    </div>
+                                    <div class="popover-list" id="list-triple">
+                                        <!-- Dynamically generated MV sections -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Section Badges Row -->
+                        <div class="sections-badges-row" id="badges-triple">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Penalty & Helmet Multiplier -->
+                <div class="penalty-col">
+                    <div class="helmet-counter-block">
+                        <div class="control-label">
+                            <span>Unhelmeted Count</span>
+                            <span style="color: #94a3b8; font-weight: 500;">(Default: 1)</span>
+                        </div>
+                        <div class="counter-pill-group">
+                            <button class="btn-counter" onclick="adjustHelmet('triple', -1)">−</button>
+                            <span class="counter-val" id="helmet-count-triple">1 Rider (₹1,000)</span>
+                            <button class="btn-counter" onclick="adjustHelmet('triple', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="penalty-total-box">
+                        <div class="total-fine-label">Total Fine Amount</div>
+                        <div class="total-fine-amount" id="total-fine-triple">₹2,000</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Evidence Modal -->
+    <div class="evidence-modal" id="evidenceModal" onclick="closeEvidenceModal()">
+        <div class="modal-content-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle" style="font-size: 16px; font-weight: 700;">Evidence Details</h3>
+                <button class="btn-close-modal" onclick="closeEvidenceModal()">✕ Close</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-img-wrap">
+                    <img id="modalImg" src="" alt="Full High-Res Evidence">
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center;">
+                    Captured via High-Speed ANPR Camera • Timestamped & Logged permanently in <code>violations.db</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ------------------------------------------------------------------
+        // EXHAUSTIVE MV ACT SECTIONS DATABASE
+        // ------------------------------------------------------------------
+        const ALL_MV_SECTIONS = [
+            { code: "Sec 129 r/w 194D", title: "Riding Without Helmet / Headgear", fine: 1000, keywords: "helmet head headgear bare safety" },
+            { code: "Sec 128 r/w 194C", title: "Overloading Two-Wheeler / Triple Riding", fine: 1000, keywords: "triple riding overload passenger bike scooter" },
+            { code: "Sec 184(c)", title: "Dangerous / Reckless / Rash Driving", fine: 5000, keywords: "rash dangerous reckless speed zigzag drive" },
+            { code: "Sec 184(f)", title: "Using Handheld Mobile Phone While Driving", fine: 5000, keywords: "mobile phone call talking texting cell" },
+            { code: "Sec 119 r/w 177", title: "Jumping Red Light / Traffic Signal Disobedience", fine: 1000, keywords: "red light signal jumping zebra cross stop" },
+            { code: "Sec 183(1)", title: "Over-speeding (Light Motor Vehicle / Bike / Car)", fine: 2000, keywords: "overspeeding speed limit fast racing" },
+            { code: "Sec 185", title: "Drunk & Drive / Driving Under Influence of Alcohol", fine: 10000, keywords: "drunk alcohol booze beer wine drug dwi dui" },
+            { code: "Sec 190(2)", title: "Pollution Violation / Without Valid PUC Certificate", fine: 10000, keywords: "puc pollution smoke emission certificate" },
+            { code: "Sec 181", title: "Driving Without Valid Driving Licence (DL)", fine: 5000, keywords: "licence license dl without expired no dl" },
+            { code: "Sec 180", title: "Allowing Unauthorized Person / Minor to Drive Vehicle", fine: 5000, keywords: "minor child unauthorized person allow" },
+            { code: "Sec 199A", title: "Offences by Juveniles / Minors", fine: 25000, keywords: "juvenile minor student kid school" },
+            { code: "Sec 196", title: "Driving Uninsured Vehicle (Without Insurance)", fine: 2000, keywords: "insurance uninsured third party policy" },
+            { code: "Sec 194E", title: "Blocking Emergency Vehicles (Ambulance / Fire Brigade)", fine: 10000, keywords: "ambulance emergency fire brigade hospital block" },
+            { code: "Sec 194B(1)", title: "Driving Without Wearing Safety Seatbelt", fine: 1000, keywords: "seatbelt belt seat buckle" },
+            { code: "Sec 177A", title: "Wrong-Side Driving / Driving Against One-Way", fine: 1000, keywords: "wrong side one way opposite direction" },
+            { code: "Sec 39 r/w 192", title: "Driving Without Number Plate / Unregistered Vehicle", fine: 5000, keywords: "no plate number plate unregistered rc" },
+            { code: "Sec 50 r/w 177", title: "Defective, Fancy, Obscured, or Illegal Number Plate", fine: 1000, keywords: "fancy plate defective font obscure illegal plate" },
+            { code: "Sec 194F(b)", title: "Use of Modified Loud Silencer / Pressure Horn", fine: 2000, keywords: "silencer modified bullet noise pressure horn loud" },
+            { code: "Sec 194F(a)", title: "Unnecessary Honking in Silent / Hospital Zone", fine: 1000, keywords: "horn honking silent zone hospital sound" },
+            { code: "Sec 100 r/w 177", title: "Using Tinted / Dark Black Glass Film on Vehicle", fine: 1000, keywords: "tinted glass black film window dark" },
+            { code: "Sec 192A", title: "Using Vehicle Without Valid Route Permit", fine: 10000, keywords: "permit commercial route taxi bus auto" },
+            { code: "Sec 189", title: "Illegal Street Racing / Speed Trials on Public Road", fine: 5000, keywords: "racing race stunts stunt trial wheelie" },
+            { code: "Sec 179(1)", title: "Disobedience of Orders of Lawful Traffic Authority", fine: 2000, keywords: "police disobey stop refuse order authority" },
+            { code: "Sec 177", title: "General Traffic Violation (Default)", fine: 500, keywords: "general default rules regulation other" }
+        ];
+
+        // ------------------------------------------------------------------
+        // STATE STORAGE FOR DEMO CARDS
+        // ------------------------------------------------------------------
+        const violationsState = {
+            rahul: {
+                helmetCount: 1,
+                maxHelmets: 1,
+                tripleRidingFine: 0,
+                customSections: []
+            },
+            triple: {
+                helmetCount: 1, // By default 1 helmet fine
+                maxHelmets: 3,
+                tripleRidingFine: 1000, // By default Triple Riding
+                customSections: []
+            }
+        };
+
+        // Render sections for a card
+        function renderCardSections(id) {
+            const state = violationsState[id];
+            const badgesContainer = document.getElementById(`badges-${id}`);
+            badgesContainer.innerHTML = '';
+
+            // 1. Triple Riding Badge (if applicable)
+            if (state.tripleRidingFine > 0) {
+                const b = document.createElement('div');
+                b.className = 'section-tag-badge';
+                b.innerHTML = `
+                    <span class="sec-code">Sec 128 r/w 194C</span>
+                    <span>Triple Riding Offense</span>
+                    <span class="sec-fine">₹1,000</span>
+                    <button class="btn-remove-sec" title="Remove Triple Riding" onclick="removeTripleRiding('${id}')">×</button>
+                `;
+                badgesContainer.appendChild(b);
+            }
+
+            // 2. Helmet Badge (with count multiplier)
+            if (state.helmetCount > 0) {
+                const helmetTotal = state.helmetCount * 1000;
+                const countText = state.helmetCount > 1 ? ` (${state.helmetCount} Riders)` : ` (1 Rider)`;
+                const b = document.createElement('div');
+                b.className = 'section-tag-badge';
+                b.innerHTML = `
+                    <span class="sec-code">Sec 129 r/w 194D</span>
+                    <span>Without Helmet${countText}</span>
+                    <span class="sec-fine">₹${helmetTotal.toLocaleString('en-IN')}</span>
+                    <button class="btn-remove-sec" title="Remove Helmet Offense" onclick="removeHelmetOffense('${id}')">×</button>
+                `;
+                badgesContainer.appendChild(b);
+            }
+
+            // 3. Custom Added MV Act Sections
+            state.customSections.forEach((sec, idx) => {
+                const b = document.createElement('div');
+                b.className = 'section-tag-badge';
+                b.innerHTML = `
+                    <span class="sec-code">${sec.code}</span>
+                    <span>${sec.title}</span>
+                    <span class="sec-fine">₹${sec.fine.toLocaleString('en-IN')}</span>
+                    <button class="btn-remove-sec" title="Remove Section" onclick="removeCustomSection('${id}', ${idx})">×</button>
+                `;
+                badgesContainer.appendChild(b);
+            });
+
+            // Update Total Calculation
+            let total = state.tripleRidingFine + (state.helmetCount * 1000);
+            state.customSections.forEach(s => total += s.fine);
+
+            document.getElementById(`total-fine-${id}`).innerText = `₹${total.toLocaleString('en-IN')}`;
+            document.getElementById(`helmet-count-${id}`).innerText = `${state.helmetCount} Rider${state.helmetCount !== 1 ? 's' : ''} (₹${(state.helmetCount * 1000).toLocaleString('en-IN')})`;
+
+            updateGlobalStats();
+        }
+
+        // Adjust Helmet Counter
+        function adjustHelmet(id, delta) {
+            const state = violationsState[id];
+            const newVal = state.helmetCount + delta;
+            if (newVal >= 0 && newVal <= state.maxHelmets) {
+                state.helmetCount = newVal;
+                renderCardSections(id);
+            }
+        }
+
+        function removeHelmetOffense(id) {
+            violationsState[id].helmetCount = 0;
+            renderCardSections(id);
+        }
+
+        function removeTripleRiding(id) {
+            violationsState[id].tripleRidingFine = 0;
+            renderCardSections(id);
+        }
+
+        function removeCustomSection(id, index) {
+            violationsState[id].customSections.splice(index, 1);
+            renderCardSections(id);
+        }
+
+        function addMvSection(id, sec) {
+            // Check if already added
+            const exists = violationsState[id].customSections.some(s => s.code === sec.code);
+            if (exists) {
+                alert(`Section ${sec.code} is already added to this violation!`);
+                return;
+            }
+            violationsState[id].customSections.push(sec);
+            renderCardSections(id);
+            window.closeAllMvMenus();
+        }
+
+        // ------------------------------------------------------------------
+        // POPOVER & WORD-BY-WORD SEARCH LOGIC
+        // ------------------------------------------------------------------
+        window.toggleMvMenu = function(popoverId, event) {
+            if (event) event.stopPropagation();
+            const pop = document.getElementById(popoverId);
+            const isOpen = pop.classList.contains('open');
+            window.closeAllMvMenus();
+            if (!isOpen) {
+                pop.classList.add('open');
+                const inp = pop.querySelector('.popover-search-input');
+                inp.value = '';
+                inp.focus();
+                const listId = pop.querySelector('.popover-list').id;
+                renderMvList(listId, ALL_MV_SECTIONS, popoverId.replace('popover-', ''));
+            }
+        };
+
+        window.closeAllMvMenus = function() {
+            document.querySelectorAll('.mv-sections-popover').forEach(p => p.classList.remove('open'));
+        };
+
+        document.addEventListener('click', () => {
+            window.closeAllMvMenus();
+        });
+
+        document.querySelectorAll('.mv-sections-popover').forEach(p => {
+            p.addEventListener('click', e => e.stopPropagation());
+        });
+
+        // Render MV Sections in Popover List
+        function renderMvList(listId, sections, cardId) {
+            const listEl = document.getElementById(listId);
+            listEl.innerHTML = '';
+            if (sections.length === 0) {
+                listEl.innerHTML = `<div style="padding: 16px; font-size: 12px; color: var(--text-muted); text-align: center;">No matching MV Act sections found.</div>`;
+                return;
+            }
+
+            sections.forEach(sec => {
+                const item = document.createElement('div');
+                item.className = 'popover-item';
+                item.onclick = () => addMvSection(cardId, sec);
+                item.innerHTML = `
+                    <div class="popover-item-row">
+                        <span class="popover-sec-code">${sec.code}</span>
+                        <span class="popover-sec-fine">₹${sec.fine.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="popover-sec-title">${sec.title}</div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // Live word-by-word filtering
+        function filterMvList(inputEl, listId) {
+            const q = inputEl.value.toLowerCase().trim();
+            const cardId = listId.replace('list-', '');
+            if (!q) {
+                renderMvList(listId, ALL_MV_SECTIONS, cardId);
+                return;
+            }
+
+            // Word-by-word query split
+            const words = q.split(/\s+/);
+            const filtered = ALL_MV_SECTIONS.filter(sec => {
+                const targetText = `${sec.code} ${sec.title} ${sec.keywords} ${sec.fine}`.toLowerCase();
+                return words.every(w => targetText.includes(w));
+            });
+
+            renderMvList(listId, filtered, cardId);
+        }
+
+        // ------------------------------------------------------------------
+        // EVIDENCE MODAL
+        // ------------------------------------------------------------------
+        function openEvidenceModal(imgSrc, title) {
+            document.getElementById('modalImg').src = imgSrc;
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('evidenceModal').classList.add('active');
+        }
+
+        function closeEvidenceModal() {
+            document.getElementById('evidenceModal').classList.remove('active');
+        }
+
+        // ------------------------------------------------------------------
+        // FILTER CARDS
+        // ------------------------------------------------------------------
+        function handleFilter(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.violation-card').forEach(card => {
+                const plate = card.getAttribute('data-plate').toLowerCase();
+                const text = card.innerText.toLowerCase();
+                card.style.display = (plate.includes(q) || text.includes(q)) ? 'grid' : 'none';
+            });
+        }
+
+        function selectMetricFilter(type, cardEl) {
+            // Remove active class from all metric cards
+            document.querySelectorAll('.metric-card').forEach(c => c.classList.remove('active'));
+            if (cardEl) {
+                cardEl.classList.add('active');
+            }
+
+            // Filter violation cards based on selected metric
+            document.querySelectorAll('.violation-card').forEach(card => {
+                const cardType = card.getAttribute('data-type');
+                if (type === 'ALL') {
+                    card.style.display = 'grid';
+                } else if (type === 'TRIPLE') {
+                    card.style.display = (cardType === 'TRIPLE') ? 'grid' : 'none';
+                } else if (type === 'NO_HELMET') {
+                    // Show only if this card has active helmet violations
+                    const id = card.id.replace('card-', '');
+                    const hasHelmet = (violationsState[id] && violationsState[id].helmetCount > 0);
+                    card.style.display = hasHelmet ? 'grid' : 'none';
+                }
+            });
+        }
+
+        // Update Global Stats Metric
+        function updateGlobalStats() {
+            let grandTotal = 0;
+            ['rahul', 'triple'].forEach(id => {
+                const state = violationsState[id];
+                grandTotal += state.tripleRidingFine + (state.helmetCount * 1000);
+                state.customSections.forEach(s => grandTotal += s.fine);
+            });
+            document.getElementById('globalTotalFine').innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+        }
+
+        // Initialize Cards
+        renderCardSections('rahul');
+        renderCardSections('triple');
+    </script>
+</body>
+</html>

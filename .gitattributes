@@ -1,0 +1,18 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Enforce LF for shell scripts and Docker files to avoid /bin/bash^M errors on Linux
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# Keep media and models strictly binary
+*.pt binary
+*.onnx binary
+*.safetensors binary
+*.sqlite binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.mp4 binary

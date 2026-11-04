@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ Traffic Violators Integration Architecture & Flowchart</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-surface: #0f172a;
+            --bg-card: #131d35;
+            --bg-elevated: #1a2644;
+            --border-dim: rgba(255, 255, 255, 0.08);
+            --border-cyan: rgba(6, 182, 212, 0.4);
+            --border-red: rgba(239, 68, 68, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-purple: #a855f7;
+            --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            padding: 28px;
+            min-height: 100vh;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        .header-title-box h1 {
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .badge-arch {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: #67e8f9;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        /* Nav Pills for Tabs inside flowchart */
+        .nav-tabs-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+        }
+
+        .section-view {
+            display: none;
+        }
+        .section-view.active {
+            display: block;
+        }
+
+        /* Flow Diagram Container */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        /* Step Card */
+        .flow-step-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 22px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s;
+        }
+
+        .flow-step-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .step-number-tag {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .tag-existing {
+            background: rgba(148, 163, 184, 0.15);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .tag-new {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid var(--accent-red);
+        }
+
+        .tag-database {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid var(--accent-emerald);
+        }
+
+        .tag-ui {
+            background: rgba(168, 85, 247, 0.15);
+            color: #d8b4fe;
+            border: 1px solid var(--accent-purple);
+        }
+
+        .step-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .detail-item h4 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .detail-item p, .detail-item ul {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .detail-item ul {
+            padding-left: 18px;
+        }
+
+        .file-hook-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #38bdf8;
+            margin-top: 4px;
+        }
+
+        /* Flow Connector Arrow */
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            font-size: 20px;
+            margin: -6px 0;
+            opacity: 0.8;
+        }
+
+        /* Side-by-side Pipeline vs Existing Branching */
+        .branch-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .branch-box {
+            border-radius: 10px;
+            padding: 16px;
+            background: #080d1a;
+            border: 1px solid var(--border-dim);
+        }
+
+        .branch-box.cars {
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .branch-box.bikes {
+            border-left: 4px solid var(--accent-red);
+            background: rgba(239, 68, 68, 0.04);
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+
+        .branch-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Interactive Simulation Box */
+        .sim-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-cyan);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .sim-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: #67e8f9;
+        }
+
+        .sim-buttons-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn-sim {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-sim:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.15);
+        }
+
+        .sim-log-box {
+            background: #020617;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 14px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: #a7f3d0;
+            min-height: 120px;
+            max-height: 220px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header-bar">
+        <div class="header-title-box">
+            <h1>
+                <span>🏛️ Traffic Violators Integration Architecture</span>
+                <span class="badge-arch">End-to-End Blueprint</span>
+            </h1>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
+                Complete Flowchart & Zero-Breaking-Change Mechanism for Connecting to Existing ANPR Pipeline.
+            </p>
+        </div>
+        <div>
+            <a href="/static/demo_violators_management.html" target="_blank" style="text-decoration: none;">
+                <button class="tab-btn" style="background: rgba(239, 68, 68, 0.2); border-color: var(--accent-red); color: #fca5a5;">
+                    🚨 View Interactive Violators UI
+                </button>
+            </a>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-row">
+        <button class="tab-btn active" onclick="switchSection('flowchart', this)">
+            📊 1. Complete Integration Flowchart
+        </button>
+        <button class="tab-btn" onclick="switchSection('mechanism', this)">
+            ⚙️ 2. Deep Working Mechanism & Code Hooks
+        </button>
+        <button class="tab-btn" onclick="switchSection('simulation', this)">
+            🧪 3. Interactive Data Flow Simulator
+        </button>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- SECTION 1: FLOWCHART -->
+    <!-- ============================================================= -->
+    <div id="sec-flowchart" class="section-view active">
+        
+        <div class="flow-container">
+            
+            <!-- STAGE 1: EXISTING RTSP INGESTION -->
+            <div class="flow-step-card">
+                <div class="step-header">
+                    <div class="step-title">
+                        <span>📹 STAGE 1: Camera Stream Ingestion & ANPR Pipeline</span>
+                    </div>
+                    <span class="step-number-tag tag-existing">EXISTING (UNTOUCHED)</span>
+                </div>
+                <div class="step-content-grid">
+                    <div class="detail-item">
+                        <h4>What happens here:</h4>
+                        <p>Camera frames arrive via RTSP or uploaded video into <code>CameraStreamManager</code>. It calls <code>ANPRPipeline.process_frame()</code>.</p>
+                        <div class="file-hook-chip">src/camera/stream_manager.py</div>
+                        <div class="file-hook-chip">src/pipeline/anpr_pipeline.py</div>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Object Detection Stage:</h4>
+                        <p>The user-selected vehicle detector runs on the frame (e.g. <code>yolo11n.pt</code> or <code>driveindia_tihan_yolov10x.pt</code>) and outputs detected bounding boxes and vehicle class labels.</p>
+                        <div class="file-hook-chip">src/detection/vehicle_detector.py</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">▼</div>
+
+            <!-- STAGE 2: VEHICLE CLASSIFICATION BRANCHING -->
+            <div class="flow-step-card" style="border-color: rgba(59, 130, 246, 0.4);">
+                <div class="step-header">
+                    <div class="step-title">
+                        <span>🔀 STAGE 2: Vehicle Class Branching (Cars vs Two-Wheelers)</span>
+                    </div>
+                    <span class="step-number-tag tag-new">ZERO COLLISION BRANCH</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                    This is where the new Violators Engine connects seamlessly without affecting Cars, Trucks, or existing ANPR:
+                </p>
+                <div class="branch-grid">
+                    <div class="branch-box cars">
+                        <div class="branch-title" style="color: #60a5fa;">
+                            <span>🚗 Cars, Trucks, Buses & Other 4-Wheelers</span>
+                        </div>
+                        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">
+                            Follows <strong>100% existing flow</strong>:<br>
+                            Plate Detector $\to$ Async OCR Worker $\to$ Temporal Voting $\to$ <code>captured_db.sqlite</code> & Trail Log.
+                        </p>
+                    </div>
+                    <div class="branch-box bikes">
+                        <div class="branch-title" style="color: #fca5a5;">
+                            <span>🏍️ Motorcycles, Scooters & Two-Wheelers</span>
+                        </div>
+                        <p style="font-size: 12px; color: #fca5a5; line-height: 1.5;">
+                            Triggers <strong>Triple Riding & Helmet Engine</strong>:<br>
+                            1. Crop seat catchment $\to$ Count seated riders.<br>
+                            2. Crop head zone $\to$ <code>helmet_violation_yolov8.pt</code> scan.<br>
+                            3. Link motorcycle plate from <code>yolov8_plate.pt</code>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">▼</div>
+
+            <!-- STAGE 3: VIOLATION EVALUATION & STORAGE -->
+            <div class="flow-step-card" style="border-color: rgba(16, 185, 129, 0.4);">
+                <div class="step-header">
+                    <div class="step-title">
+                        <span>⚖️ STAGE 3: Violation Logic Gate & Permanent Database</span>
+                    </div>
+                    <span class="step-number-tag tag-database">NEW PERMANENT STORAGE</span>
+                </div>
+                <div class="step-content-grid">
+                    <div class="detail-item">
+                        <h4>Violation Check Rules:</h4>
+                        <ul>
+                            <li><strong>Rider Count $\ge 3$</strong>: Flagged under <code>Sec 128 r/w 194C</code> (₹1,000 fine).</li>
+                            <li><strong>Unhelmeted Rider(s) Detected</strong>: Flagged under <code>Sec 129 r/w 194D</code> (₹1,000 fine).</li>
+                            <li><strong>Compound (Both)</strong>: Total baseline ₹2,000.</li>
+                        </ul>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Permanent Storage Gate:</h4>
+                        <p>If Violation == True, event is saved to <strong><code>data/violations.db</code></strong> (SQLite).</p>
+                        <p style="font-size: 12px; color: #6ee7b7; margin-top: 6px;">
+                            🛡️ <em>Key feature: Completely bypasses the 100-entry circular camera buffer. Entries NEVER disappear.</em>
+                        </p>
+                        <div class="file-hook-chip">src/database/violation_db.py</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">▼</div>
+
+            <!-- STAGE 4: FRONTEND OPERATOR ENFORCEMENT DESK -->
+            <div class="flow-step-card" style="border-color: rgba(168, 85, 247, 0.4);">
+                <div class="step-header">
+                    <div class="step-title">
+                        <span>🚨 STAGE 4: Frontend Operator Desk & Dynamic Penalties</span>
+                    </div>
+                    <span class="step-number-tag tag-ui">OPERATOR WORKSPACE</span>
+                </div>
+                <div class="step-content-grid">
+                    <div class="detail-item">
+                        <h4>Real-Time HUD & Alerts:</h4>
+                        <ul>
+                            <li>Floating Crimson HUD Alert on live camera monitor.</li>
+                            <li>Auditory chime to notify on-duty traffic police operator.</li>
+                        </ul>
+                    </div>
+                    <div class="detail-item">
+                        <h4>"🚨 Violators" Tab (`switchTab('violators')`):</h4>
+                        <ul>
+                            <li><strong>Clickable Metric Filter Cards</strong>: Today's Violations, Triple Riding, Without Helmet.</li>
+                            <li><strong>Helmet Counter Multiplier</strong>: Operator adjusts count <code>[-] 1 [+]</code> to scale penalty.</li>
+                            <li><strong>Word-by-word MV Act Search</strong>: Inline floating popover with 24+ sections.</li>
+                            <li><strong>1-Click Evidence Modal</strong>: High-res bounding-box photo inspection.</li>
+                        </ul>
+                        <div class="file-hook-chip">static/index.html (via 1-click rollout)</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- SECTION 2: WORKING MECHANISM & CODE HOOKS -->
+    <!-- ============================================================= -->
+    <div id="sec-mechanism" class="section-view">
+        <div class="flow-container">
+            
+            <div class="flow-step-card">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #38bdf8;">1. Where in the existing code does it plug in?</h3>
+                <p style="font-size: 13px; line-height: 1.7; color: #cbd5e1; margin-bottom: 14px;">
+                    In <code>src/pipeline/anpr_pipeline.py</code>, right inside the <code>process_frame()</code> loop where vehicles are already detected:
+                </p>
+                <div style="background: #020617; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px; color: #e2e8f0; line-height: 1.6;">
+<span style="color: #64748b;"># Inside ANPRPipeline.process_frame():</span>
+<span style="color: #f43f5e;">for</span> track <span style="color: #f43f5e;">in</span> tracked_vehicles:
+    <span style="color: #f43f5e;">if</span> track.cls_name <span style="color: #f43f5e;">in</span> [<span style="color: #38bdf8;">'motorcycle'</span>, <span style="color: #38bdf8;">'scooter'</span>]:
+        <span style="color: #64748b;"># 🚀 NEW HOOK: Invoke Triple Riding & Helmet Detector</span>
+        violation_res = <span style="color: #38bdf8;">self</span>.triple_riding_detector.analyze_motorcycle(
+            frame=frame,
+            bike_bbox=track.bbox,
+            persons=detected_persons
+        )
+        <span style="color: #f43f5e;">if</span> violation_res[<span style="color: #38bdf8;">'is_violation'</span>]:
+            <span style="color: #64748b;"># Save permanently & trigger WebSocket alert</span>
+            violation_db.record_violation(violation_res)
+            <span style="color: #38bdf8;">self</span>.broadcast_violation_alert(violation_res)
+                </div>
+            </div>
+
+            <div class="flow-step-card">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #10b981;">2. Database Isolation: Why violations will never disappear</h3>
+                <p style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                    The live camera monitor currently uses an in-memory queue/ring buffer (100 items).<br>
+                    The new <strong><code>data/violations.db</code></strong> is an independent SQLite database table. Every entry has a unique UUID, ISO-8601 timestamp, camera location, plate number, rider count, helmet status, and path to the evidence JPEG. It is never truncated or overwritten.
+                </p>
+            </div>
+
+            <div class="flow-step-card">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #a855f7;">3. Zero-Breaking-Change Guarantee</h3>
+                <p style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
+                    • <strong>Existing ANPR Pipeline</strong> for cars, buses, and trucks runs without modification.<br>
+                    • <strong>Existing FRS (Face Recognition)</strong> pipeline is completely untouched.<br>
+                    • <strong>Existing Master DB & Search</strong> continues functioning normally.<br>
+                    • If the operator disables or ignores violations, the normal tracking stream operates as usual.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- SECTION 3: INTERACTIVE SIMULATOR -->
+    <!-- ============================================================= -->
+    <div id="sec-simulation" class="section-view">
+        <div class="sim-card">
+            <div class="sim-title">🧪 Live Pipeline Ingestion Simulator</div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Click any scenario below to see how the architecture processes frames, detects riders, applies the MV Act sections, and writes to <code>violations.db</code> in real-time:
+            </p>
+
+            <div class="sim-buttons-row">
+                <button class="btn-sim" onclick="runSim('rahul')">
+                    🏍️ Simulate Solo Driver Without Helmet (Rahul HR20BE1054)
+                </button>
+                <button class="btn-sim" onclick="runSim('triple')">
+                    🚨 Simulate Triple Riding (DL08AB4421 - 3 Riders)
+                </button>
+                <button class="btn-sim" onclick="runSim('compliant')">
+                    ✅ Simulate Compliant Scooter Rider (Activa with Helmet)
+                </button>
+                <button class="btn-sim" onclick="runSim('car')">
+                    🚗 Simulate Car (Creta HR06BM2456 - Standard ANPR)
+                </button>
+            </div>
+
+            <div class="sim-log-box" id="simLogBox">
+                [SYSTEM READY] Click a simulation scenario button above to trace execution flow through the pipeline...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchSection(secId, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`sec-${secId}`).classList.add('active');
+        }
+
+        function runSim(scenario) {
+            const box = document.getElementById('simLogBox');
+            box.innerHTML = '';
+            
+            function log(msg, delay) {
+                setTimeout(() => {
+                    box.innerHTML += `<div>${msg}</div>`;
+                    box.scrollTop = box.scrollHeight;
+                }, delay);
+            }
+
+            if (scenario === 'rahul') {
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> RTSP Frame received: resolution 1080x1920", 100);
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> Vehicle Detector: 'motorcycle' detected at [280, 520, 510, 1140] (Conf: 89%)", 400);
+                log("<span style='color:#f59e0b;'>[STAGE 2]</span> Branching: Two-Wheeler detected -> Routing to TripleRidingDetector", 700);
+                log("<span style='color:#f59e0b;'>[STAGE 2]</span> Rider Catchment: 1 Rider detected (Solo Driver). Triple Riding = FALSE", 1000);
+                log("<span style='color:#f43f5e;'>[STAGE 2]</span> Helmet Model (helmet_violation_yolov8): 'Without helmet' (Conf: 82.2%)", 1300);
+                log("<span style='color:#ef4444;'>[STAGE 3]</span> 🚨 VIOLATION FLAGGED: MV Act Sec 129 r/w 194D (₹1,000 Fine)", 1600);
+                log("<span style='color:#10b981;'>[STAGE 3]</span> Permanent DB: Inserted to data/violations.db -> ID: VIOL_HR20_8842", 1900);
+                log("<span style='color:#a855f7;'>[STAGE 4]</span> WebSocket Alert Broadcasted -> Floating HUD Triggered on Operator Screen", 2200);
+            } else if (scenario === 'triple') {
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> RTSP Frame received: resolution 1080x1920", 100);
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> Vehicle Detector: 'motorcycle' detected at [460, 680, 720, 1260]", 400);
+                log("<span style='color:#f59e0b;'>[STAGE 2]</span> Branching: Two-Wheeler detected -> Routing to TripleRidingDetector", 700);
+                log("<span style='color:#ef4444;'>[STAGE 2]</span> Rider Catchment: 3 Distinct Persons Seated! Triple Riding = TRUE (Conf: 94%)", 1000);
+                log("<span style='color:#f43f5e;'>[STAGE 2]</span> Helmet Model: Unhelmeted riders detected in catchment zone", 1300);
+                log("<span style='color:#ef4444;'>[STAGE 3]</span> 🚨 COMPOUND VIOLATION: Sec 128 (194C) + Sec 129 (194D) -> Default ₹2,000", 1600);
+                log("<span style='color:#10b981;'>[STAGE 3]</span> Permanent DB: Saved to data/violations.db (Permanent Record)", 1900);
+                log("<span style='color:#a855f7;'>[STAGE 4]</span> HUD: Red Alert Beep + Operator Counter set to [1 Unhelmeted] with 1-click [+] to scale to 3", 2200);
+            } else if (scenario === 'compliant') {
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> RTSP Frame received: Black Scooter (Activa/Jupiter)", 100);
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> Vehicle Detector: 'motorcycle' (scooter) detected", 400);
+                log("<span style='color:#f59e0b;'>[STAGE 2]</span> Rider Catchment: 1 Rider seated. Triple Riding = FALSE", 700);
+                log("<span style='color:#10b981;'>[STAGE 2]</span> Helmet Model: 'With helmet' verified (Conf: 61%) -> COMPLIANT", 1000);
+                log("<span style='color:#10b981;'>[STAGE 3]</span> Status: COMPLIANT. No violation alarm triggered.", 1300);
+                log("<span style='color:#64748b;'>[STAGE 3]</span> Standard Trail logged; violations.db NOT populated (zero clutter)", 1600);
+            } else if (scenario === 'car') {
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> RTSP Frame received: Hyundai Creta (HR 06 BM 2456)", 100);
+                log("<span style='color:#38bdf8;'>[STAGE 1]</span> Vehicle Detector: 'car' detected", 400);
+                log("<span style='color:#60a5fa;'>[STAGE 2]</span> Branching: Non-two-wheeler -> Bypasses Triple Riding Engine directly", 700);
+                log("<span style='color:#60a5fa;'>[STAGE 2]</span> Existing Standard Flow: Plate Detector -> OCR Engine -> captured_db.sqlite", 1000);
+                log("<span style='color:#10b981;'>[SUCCESS]</span> Standard ANPR trail logged. 0% impact on existing pipeline.", 1300);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haryana Police - Triple Riding Detection & Floating Alert Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --panel-bg: rgba(15, 23, 42, 0.82);
+            --border-col: rgba(255, 255, 255, 0.12);
+            --danger-neon: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.35);
+            --success-neon: #10b981;
+            --accent-cyan: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.08) 0px, transparent 50%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border-col);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .badge-live::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* Layout Grid */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            padding: 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Video / Feed Viewport */
+        .viewport-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .viewport-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(30, 41, 59, 0.5);
+            border-bottom: 1px solid var(--border-col);
+        }
+
+        .viewport-stage {
+            position: relative;
+            flex: 1;
+            min-height: 520px;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .viewport-stage img {
+            max-width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        /* Simulation Controls Bar */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid var(--border-col);
+            gap: 12px;
+        }
+
+        .btn-sim {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+        .btn-sim-violation {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        .btn-sim-violation:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(239, 68, 68, 0.6);
+        }
+
+        .btn-sim-normal {
+            background: rgba(30, 41, 59, 0.9);
+            color: #cbd5e1;
+            border-color: var(--border-col);
+        }
+        .btn-sim-normal:hover {
+            background: rgba(51, 65, 85, 0.9);
+            color: #fff;
+        }
+
+        /* Side Panel: Log & Stats */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .stat-box {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            border-radius: 10px;
+        }
+        .stat-val {
+            font-size: 1.45rem;
+            font-weight: 800;
+            margin-top: 4px;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(30, 41, 59, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 8px;
+            font-size: 0.78rem;
+        }
+
+        /* ======================================================== */
+        /* FLOATING OPERATOR ALERT HUD WIDGET (THE STAR FEATURE)   */
+        /* ======================================================== */
+        #floatingTripleRidingAlert {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 420px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1.5px solid var(--danger-neon);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px var(--danger-glow);
+            backdrop-filter: blur(20px);
+            z-index: 99999;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            animation: alertFlyIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes alertFlyIn {
+            from { opacity: 0; transform: translateY(-30px) scale(0.92); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.1));
+            border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .alert-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-pulse-icon {
+            font-size: 1.25rem;
+            animation: dangerPulse 1.2s infinite;
+        }
+
+        @keyframes dangerPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px #ef4444); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 16px #ef4444); }
+        }
+
+        .alert-body {
+            padding: 16px 18px;
+            display: flex;
+            gap: 14px;
+        }
+
+        .alert-thumbnail-box {
+            width: 110px;
+            height: 110px;
+            background: #020617;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .alert-thumbnail-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .alert-thumbnail-tag {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            right: 4px;
+            background: rgba(220, 38, 38, 0.85);
+            color: #fff;
+            font-size: 0.60rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 2px 0;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .alert-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .plate-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f172a;
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        .alert-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            background: rgba(30, 41, 59, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-action-challan {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-action-dismiss {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* E-Challan Draft Modal */
+        #challanModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100000;
+            padding: 20px;
+        }
+
+        .challan-card {
+            background: #0f172a;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 18px;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-box">
+            <span style="font-size: 1.5rem;">🇮🇳</span>
+            <div>
+                <h1 style="font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em;">HARYANA TRAFFIC POLICE</h1>
+                <p style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">Automated Triple Riding & Multi-Rider E-Challan HUD System</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="badge-live">SURVEILLANCE HUD LIVE</div>
+            <div style="font-size: 0.78rem; color: #cbd5e1; font-weight: 600;">Camera: <strong>CAM-01 (Highway Corridor)</strong></div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-container">
+        
+        <!-- Left: Live Video & Inspection Stage -->
+        <div class="viewport-card">
+            <div class="viewport-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 700;">LIVE FEED MONITORING</span>
+                    <span style="font-size: 0.72rem; color: #64748b;">• 1080p @ 30 FPS</span>
+                </div>
+                <div id="statusBadge" style="font-size: 0.74rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    MONITORING: COMPLIANT
+                </div>
+            </div>
+
+            <div class="viewport-stage">
+                <!-- Annotated Frame Image -->
+                <img id="stageImage" src="/static/annotated_scenario_1_triple_riding.jpg" alt="Traffic Surveillance View">
+            </div>
+
+            <!-- Controls to toggle simulation -->
+            <div class="controls-bar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">PROTOTYPE TEST SCENARIO:</span>
+                    <button type="button" class="btn-sim btn-sim-violation" onclick="simulateScenario('violation')">
+                        🚨 Trigger Triple Riding Violation (3 Riders)
+                    </button>
+                    <button type="button" class="btn-sim btn-sim-normal" onclick="simulateScenario('normal')">
+                        ✅ Normal Solo Rider (1 Rider)
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #cbd5e1; cursor: pointer;">
+                        <input type="checkbox" id="chkAudioAlert" checked style="accent-color: #ef4444;">
+                        Audio Warning Beep 🔊
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Stats & Violation Log -->
+        <div class="side-panel">
+            <div class="stat-card">
+                <h3 style="font-size: 0.84rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Real-Time Shift Analytics</h3>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div style="font-size: 0.68rem; color: #64748b; font-weight: 700;">TWO-WHEELERS SCANNED</div>
+                        <div class="stat-val" id="cntScanned" style="color: #38bdf8;">142</div>
+                    </div>
+                    <div class="stat-box">
+                        <div style="font-size: 0.68rem; color: #64748b; font-weight: 700;">TRIPLE RIDING OFFENSES</div>
+                        <div class="stat-val" id="cntViolations" style="color: #ef4444;">1</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card" style="flex: 1; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="font-size: 0.84rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Active Shift Violations</h3>
+                    <span style="font-size: 0.68rem; color: #10b981; font-weight: 700;">Live Sync</span>
+                </div>
+                <div id="violationLogContainer" style="flex: 1; overflow-y: auto; max-height: 380px;">
+                    <div class="log-item" style="border-left: 3px solid #ef4444;">
+                        <div>
+                            <div style="font-weight: 700; color: #f87171;">TRIPLE RIDING (3 Riders)</div>
+                            <div style="font-size: 0.70rem; color: #94a3b8;">Plate: HR20BE1054 • CAM-01</div>
+                        </div>
+                        <span style="font-size: 0.68rem; background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 2px 6px; border-radius: 4px;">Just Now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- FLOATING OPERATOR ALERT HUD WIDGET                     -->
+    <!-- ======================================================== -->
+    <div id="floatingTripleRidingAlert">
+        <div class="alert-header">
+            <div class="alert-title-box">
+                <span class="alert-pulse-icon">🚨</span>
+                <div>
+                    <div style="font-weight: 800; font-size: 0.88rem; color: #fecaca; letter-spacing: 0.02em;">TRAFFIC VIOLATION: TRIPLE RIDING</div>
+                    <div style="font-size: 0.68rem; color: #f87171; font-weight: 600;">Sec 128 / 194C Motor Vehicles Act • Overloaded Two-Wheeler</div>
+                </div>
+            </div>
+            <button type="button" onclick="dismissAlert()" style="background: none; border: none; color: #cbd5e1; font-size: 1.1rem; cursor: pointer;">✕</button>
+        </div>
+
+        <div class="alert-body">
+            <div class="alert-thumbnail-box">
+                <img id="alertThumbImg" src="/static/annotated_scenario_1_triple_riding.jpg" alt="Violation Crop">
+                <div class="alert-thumbnail-tag">3 RIDERS</div>
+            </div>
+            <div class="alert-details">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">TARGET VEHICLE:</span>
+                    <span style="font-size: 0.72rem; color: #ef4444; font-weight: 800;">3 PERSONS ON SEAT</span>
+                </div>
+                <div class="plate-chip">
+                    <span>🛵</span>
+                    <span id="alertPlateNumber">HR20BE1054</span>
+                </div>
+                <div style="font-size: 0.70rem; color: #94a3b8; margin-top: 2px;">
+                    <div>Camera: <strong>CAM-01 (Highway Toll)</strong></div>
+                    <div>Violation Fine: <strong style="color: #fbbf24;">₹1,000 + License Endorsement</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert-footer">
+            <button type="button" class="btn-action-dismiss" onclick="dismissAlert()">Dismiss (Shift Logged)</button>
+            <button type="button" class="btn-action-challan" onclick="openChallanModal()">Draft E-Challan 📝</button>
+        </div>
+    </div>
+
+    <!-- E-Challan Modal -->
+    <div id="challanModal">
+        <div class="challan-card">
+            <div style="padding: 16px 20px; background: rgba(239, 68, 68, 0.15); border-bottom: 1px solid rgba(239, 68, 68, 0.3); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 800; font-size: 0.95rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                    <span>📝</span>
+                    <span>AUTOMATED E-CHALLAN NOTICE (DRAFT)</span>
+                </div>
+                <button type="button" onclick="closeChallanModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="font-size: 0.80rem; color: #cbd5e1; margin-bottom: 14px;">
+                    Automated optical evidence recorded by AI Surveillance System for vehicle registration:
+                </p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 12px; border-radius: 8px; font-size: 0.78rem; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #94a3b8;">Offense:</span>
+                        <strong style="color: #f87171;">Triple Riding on Two-Wheeler (3 Persons)</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #94a3b8;">Vehicle Plate:</span>
+                        <strong style="color: #38bdf8;">HR20BE1054 (Haryana State)</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #94a3b8;">Section:</span>
+                        <span>Sec 128 / 194C MV Act 1988</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">
+                        <span style="color: #94a3b8;">Penal Fine:</span>
+                        <strong style="color: #34d399; font-size: 0.92rem;">₹1,000 INR</strong>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="closeChallanModal()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; padding: 7px 16px; border-radius: 6px; font-size: 0.78rem; cursor: pointer;">Cancel</button>
+                    <button type="button" onclick="confirmChallan()" style="background: #10b981; border: none; color: #fff; padding: 7px 18px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Dispatch to VAHAN / NIC 🚀</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer Beep (Zero assets needed)
+        function playWarningBeep() {
+            if (!document.getElementById('chkAudioAlert').checked) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        function simulateScenario(mode) {
+            const stageImg = document.getElementById('stageImage');
+            const alertBox = document.getElementById('floatingTripleRidingAlert');
+            const statusBadge = document.getElementById('statusBadge');
+            const alertThumb = document.getElementById('alertThumbImg');
+            const alertPlate = document.getElementById('alertPlateNumber');
+
+            if (mode === 'violation') {
+                stageImg.src = '/static/annotated_scenario_1_triple_riding.jpg';
+                statusBadge.innerText = 'VIOLATION DETECTED: TRIPLE RIDING (3 RIDERS)';
+                statusBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                statusBadge.style.color = '#ef4444';
+
+                alertThumb.src = '/static/annotated_scenario_1_triple_riding.jpg';
+                alertPlate.innerText = 'HR20BE1054';
+
+                alertBox.style.display = 'flex';
+                playWarningBeep();
+            } else {
+                stageImg.src = '/static/annotated_scenario_2_solo_rider.jpg';
+                statusBadge.innerText = 'MONITORING: COMPLIANT (1 RIDER)';
+                statusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                statusBadge.style.color = '#34d399';
+
+                alertBox.style.display = 'none';
+            }
+        }
+
+        function dismissAlert() {
+            document.getElementById('floatingTripleRidingAlert').style.display = 'none';
+        }
+
+        function openChallanModal() {
+            document.getElementById('challanModal').style.display = 'flex';
+        }
+
+        function closeChallanModal() {
+            document.getElementById('challanModal').style.display = 'none';
+        }
+
+        function confirmChallan() {
+            alert('✅ E-Challan dispatched successfully to Haryana Police VAHAN Database with registered snapshot evidence!');
+            closeChallanModal();
+            dismissAlert();
+        }
+
+        // Auto trigger demonstration alert on load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                simulateScenario('violation');
+            }, 800);
+        });
+    </script>
+</body>
+</html>

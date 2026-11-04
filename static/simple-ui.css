@@ -1,0 +1,71 @@
+/* Presentation only: existing controls, IDs, handlers and values are retained. */
+body.ui-simple{--bg-main:#f4f7fb;--bg-card:#ffffff;--border-color:#cbd5e1;--text-muted:#64748b;--text-secondary:#475569}
+.ui-simple .main-content{padding:0 20px;max-width:1600px}
+.ui-simple .panel-card{box-shadow:none!important;border-color:var(--border-color)!important;border-radius:12px!important}
+.ui-simple .panel-card h2,.ui-simple .panel-header h2{letter-spacing:0!important;text-transform:none!important;font-weight:600!important}
+.ui-simple .nav-icon-box{box-shadow:none!important;background:transparent!important}
+.ui-simple .sidebar-nav-item.active{background:#dbeafe!important;box-shadow:none!important}
+.ui-simple .sidebar-nav-item{gap:10px;border-radius:8px;min-height:44px}
+.ui-simple .nav-badge{background:#e2e8f0!important;color:#1e293b!important;font-weight:500}
+.ui-simple .sidebar-brand-text{white-space:normal}
+.ui-simple .sidebar-brand-text h2{font-size:16px}
+.ui-simple .header-view-title{font-size:16px!important;font-weight:600!important}
+.ui-simple .header-breadcrumb{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+.ui-simple .header-status-pulse{display:none}
+.ui-simple #toggleModeLive,.ui-simple #toggleModeUpload{min-height:42px;box-shadow:none!important;font-size:15px}
+.ui-simple .ui-settings{margin:0 0 14px;border:1px solid var(--border-color);border-radius:10px;background:#ffffff;min-width:0}
+.ui-simple .ui-settings>summary{padding:12px 16px;color:#334155;font-size:14px;font-weight:500;cursor:pointer;user-select:none}
+.ui-simple .ui-settings>summary::marker{color:#52647c}
+.ui-simple .ui-settings[open]>summary{border-bottom:1px solid var(--border-color)}
+.ui-simple .ui-settings #aiModelEngineBar{margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:14px!important;flex-wrap:wrap;gap:12px}
+.ui-simple .ai-model-deck-left,.ui-simple .ai-model-deck-right{flex-wrap:wrap!important;gap:10px!important}
+.ui-simple #hudLayersBar{margin:0!important;border:0!important;background:transparent!important;padding:12px!important;gap:10px!important;flex-wrap:wrap!important}
+.ui-simple #hudLayersBar .hud-layers-label{display:none}
+.ui-simple .hud-toggle-pill{box-shadow:none!important;border-color:#3c4d63!important;background:#eff4fa!important;color:#1e293b!important;border-radius:6px!important;padding:7px 10px!important}
+.ui-simple .tile-standby button{min-height:36px;min-width:112px;font-size:14px!important;padding:8px 14px!important;border-radius:7px!important;background:#2a62c8!important;color:#fff!important;border:0!important}
+.ui-simple .tile-standby{gap:14px!important}
+.ui-simple .cam-tile,.ui-simple .camera-tile{border-color:#304158!important;box-shadow:none!important}
+.ui-simple .modal-backdrop{backdrop-filter:blur(3px)!important}
+.ui-simple .modal-content{border-radius:12px!important;border-color:#33455e!important;box-shadow:0 20px 60px #0006!important}
+.ui-simple .modal-header h2,.ui-simple .modal-header h3{font-size:19px!important;font-weight:600!important}
+.ui-simple #connectCameraForm{padding:20px!important;gap:18px!important}
+.ui-simple #connectCameraForm{display:flex!important;flex-direction:column!important;overflow:hidden!important;max-height:calc(90vh - 140px)!important}
+.ui-simple #uiConnectFields{display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0;flex:1;padding-right:4px}
+.ui-simple #connectCameraForm>.modal-footer{flex-shrink:0;margin:0!important;padding:12px 0 0!important;border-top:1px solid var(--border-color)}
+.ui-simple #connectCameraForm>.modal-footer button{min-height:40px;font-size:15px}
+.ui-simple #connectCameraForm .form-group{gap:8px;margin-top:0!important}
+.ui-simple #connectCameraForm label{font-size:14px!important;font-weight:500!important}
+.ui-simple #connectCameraForm input,.ui-simple #connectCameraForm select{min-height:42px!important;font-size:15px!important;border-radius:7px!important;box-sizing:border-box}
+.ui-simple .knl-picker{gap:9px;margin:14px 0}
+.ui-simple .knl-picker>label{font-size:15px;font-weight:500}
+.ui-simple .knl-picker input,.ui-simple .knl-picker select{min-height:42px;padding:10px 12px;font-size:15px}
+.ui-simple .knl-picker>button,.ui-simple .knl-map-button{min-height:38px;box-shadow:none;font-size:14px;background:#245ab5}
+.ui-simple .knl-map-button:disabled{opacity:.45;cursor:default}
+.ui-simple .knl-coords{font-size:14px;color:#52647c}
+.ui-simple .knl-map-dialog{max-width:900px;width:calc(100% - 32px);padding:20px;border-color:#3c4d63;box-sizing:border-box}
+.ui-simple .knl-map-dialog h3{font-size:18px;font-weight:600;margin:0}
+.ui-simple .knl-map-dialog .knl-caption{line-height:1.6;overflow-wrap:anywhere}
+.ui-simple .ui-subtle-note{color:#52647c;font-size:14px;line-height:1.6;margin:8px 0}
+.ui-simple #connectCameraForm [hidden]{display:none!important}
+.ui-simple #connectCameraForm .ui-settings{margin:4px 0}
+.ui-simple #connectCameraForm .ui-settings>.form-group{padding:14px}
+.ui-simple #knlNetworkStatus{font-size:14px;color:#52647c}
+@media(min-width:1100px){
+ .ui-simple .app-sidebar,.ui-simple .app-sidebar:hover{width:232px!important;box-shadow:none!important}
+ .ui-simple .main-content{margin-left:252px!important;margin-right:0!important}
+ .ui-simple .app-header{margin-left:232px!important;padding:14px 24px!important}
+ .ui-simple .app-sidebar .nav-label,.ui-simple .app-sidebar .nav-badge,.ui-simple .app-sidebar .sidebar-brand-text,.ui-simple .app-sidebar .sec-title,.ui-simple .app-sidebar .sidebar-account-info{opacity:1!important;transform:none!important;pointer-events:auto!important}
+ .ui-simple .nav-label{font-size:14px;white-space:normal;line-height:1.4}
+ .ui-simple .sidebar-nav-item{padding:8px 10px}
+ .ui-simple .sidebar-account-info{min-width:0}
+ .ui-simple .sidebar-account-name-row{flex-wrap:wrap;gap:3px}
+}
+@media(max-width:700px){
+ .ui-simple .main-content{padding:0 12px!important}
+ .ui-simple .ui-settings>summary{padding:12px}
+ .ui-simple .knl-map-dialog{padding:14px;width:calc(100% - 16px)}
+ .ui-simple .knl-map-dialog header{align-items:flex-start}
+ .ui-simple .knl-map-dialog h3{font-size:17px}
+ .ui-simple .knl-picker>button{min-height:42px}
+ .ui-simple .modal-header{flex-wrap:wrap;gap:10px}
+}

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haryana Police Surveillance - Mobile Device Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0a0e17 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            overflow-x: hidden;
+        }
+
+        .simulator-top-bar {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .badge-pill {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .simulator-top-bar h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .simulator-top-bar p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* MAIN WRAPPER: PHONE + CONTROLS */
+        .simulator-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 48px;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        /* SMARTPHONE HARDWARE CHASSIS MOCKUP */
+        .phone-mockup-wrapper {
+            position: relative;
+            width: 416px;
+            height: 876px;
+            background: #1e222d;
+            border-radius: 54px;
+            padding: 12px;
+            box-shadow: 
+                0 0 0 2px #334155,
+                0 0 0 4px #0f172a,
+                0 30px 80px rgba(0, 0, 0, 0.8),
+                0 10px 30px rgba(0, 0, 0, 0.6);
+            border: 4px solid #475569;
+            flex-shrink: 0;
+        }
+
+        /* Hardware buttons */
+        .phone-mockup-wrapper::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 140px;
+            width: 4px;
+            height: 50px;
+            background: #334155;
+            border-radius: 4px 0 0 4px;
+            box-shadow: 0 70px 0 #334155, 0 130px 0 #334155;
+        }
+
+        .phone-mockup-wrapper::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 180px;
+            width: 4px;
+            height: 75px;
+            background: #334155;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* SCREEN BEZEL */
+        .phone-screen-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            border-radius: 42px;
+            overflow: hidden;
+            border: 2px solid #0f172a;
+        }
+
+        /* DYNAMIC ISLAND / CAMERA NOTCH */
+        .dynamic-island {
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85px;
+            height: 18px;
+            background: #000000;
+            border-radius: 12px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+
+        .camera-lens {
+            width: 7px;
+            height: 7px;
+            background: #0f172a;
+            border-radius: 50%;
+            border: 1px solid #1e293b;
+        }
+
+        .sensor-dot {
+            width: 4px;
+            height: 4px;
+            background: #064e3b;
+            border-radius: 50%;
+        }
+
+        /* LIVE IFRAME INSIDE PHONE SCREEN */
+        .phone-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0a0e17;
+            display: block;
+        }
+
+        /* HOME INDICATOR BAR */
+        .home-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 134px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        /* INFO & DEVICE CONTROLS PANEL */
+        .simulator-info-panel {
+            flex: 1;
+            max-width: 480px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 28px;
+            backdrop-filter: blur(16px);
+        }
+
+        .panel-badge {
+            font-size: 0.72rem;
+            color: #38bdf8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .simulator-info-panel h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 12px;
+            line-height: 1.25;
+        }
+
+        .simulator-info-panel p {
+            color: #94a3b8;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            margin-bottom: 20px;
+        }
+
+        .feature-item-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        .feature-check {
+            color: #10b981;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .phone-ip-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+
+        .ip-label {
+            font-size: 0.72rem;
+            color: #93c5fd;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .ip-url {
+            font-size: 1.05rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .btn-interact {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #2563eb;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.15s ease;
+        }
+
+        .btn-interact:hover {
+            background: #1d4ed8;
+        }
+
+        @media (max-width: 960px) {
+            .simulator-container {
+                flex-direction: column;
+            }
+            .phone-mockup-wrapper {
+                transform: scale(0.9);
+                transform-origin: top center;
+                margin-bottom: -60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="simulator-top-bar">
+        <span class="badge-pill">Mobile Native Viewport (390 × 844 px)</span>
+        <h1>Haryana Police Surveillance App Simulator</h1>
+        <p>Aap mouse ya touch se phone ke andar buttons tap karke interact kar sakte hain</p>
+    </div>
+
+    <div class="simulator-container">
+        
+        <!-- SMARTPHONE DEVICE MOCKUP FRAME -->
+        <div class="phone-mockup-wrapper">
+            <div class="phone-screen-container">
+                
+                <!-- Dynamic Island / Top Camera -->
+                <div class="dynamic-island">
+                    <span class="camera-lens"></span>
+                    <span class="sensor-dot"></span>
+                </div>
+
+                <!-- Live Prototype Loaded Inside Mobile Viewport -->
+                <iframe class="phone-iframe" src="/static/mobile_prototype.html" title="Mobile App Screen"></iframe>
+
+                <!-- iPhone Home Indicator Bar -->
+                <div class="home-indicator"></div>
+            </div>
+        </div>
+
+        <!-- INFO & TESTING PANEL -->
+        <div class="simulator-info-panel">
+            <span class="panel-badge">Interactive Touch Screen</span>
+            <h2>Proper Mobile Interface Preview</h2>
+            <p>
+                Ye interface bilkul ek real smartphone app ki tarah design kiya gaya hai. Screen par horizontal scrollbar nahi aayega aur saare controls 100% accessible hain:
+            </p>
+
+            <ul class="feature-item-list">
+                <li class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <div><strong>No Side-Squish:</strong> Desktop sidebar mobile me chup gaya hai, top-left <strong>☰ Menu</strong> dabane se smooth slide-over drawer khulta hai.</div>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <div><strong>Un-Obstructed Camera Controls:</strong> Pause, Reconnect, AI Mode, aur Fullscreen buttons video ke theek niche clean layout me hain (kabhi nahi chupenge).</div>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <div><strong>Compact Red Alert:</strong> Hotlist/Suspect alert ab camera ko cover nahi karta — sirf 40px ka compact dismissible banner banaya hai.</div>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <div><strong>Bottom App Navigation:</strong> Feeds, Search, Alerts, Suspects, aur Menu ek touch me switch hote hain.</div>
+                </li>
+            </ul>
+
+            <div class="phone-ip-box">
+                <span class="ip-label">📱 Apne Real Mobile Phone Par Test Karne Ke Liye:</span>
+                <div class="ip-url">http://172.20.10.3:8000/static/mobile_prototype.html</div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">(Apne phone ke Chrome / Safari browser me ye URL dalein)</div>
+            </div>
+
+            <button class="btn-interact" onclick="document.querySelector('.phone-iframe').contentWindow.location.reload();">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Reload Mobile Prototype
+            </button>
+        </div>
+
+    </div>
+
+</body>
+</html>

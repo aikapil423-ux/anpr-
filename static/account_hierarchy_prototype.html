@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Haryana Police Surveillance - Account Hierarchy Prototype</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-dark: #0f172a;
+      --border-dark: rgba(255, 255, 255, 0.1);
+      --accent-blue: #38bdf8;
+      --accent-indigo: #6366f1;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6 text-slate-100 min-h-screen">
+
+  <!-- Prototype Mode Switcher Bar -->
+  <div class="max-w-6xl mx-auto mb-6 p-3 bg-slate-900/90 border border-indigo-500/30 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg backdrop-blur">
+    <div class="flex items-center gap-3">
+      <span class="px-2.5 py-1 bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 rounded-md text-xs font-bold uppercase tracking-wider">
+        Interactive Prototype
+      </span>
+      <span class="text-sm font-semibold text-slate-200">Switch Simulation Persona:</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btnRoleState" onclick="setPersona('state')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/30">
+        👑 State Admin (All Haryana)
+      </button>
+      <button id="btnRoleDistrict" onclick="setPersona('district')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+        🏢 District Admin (Panipat SP Office)
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div class="max-w-6xl mx-auto bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[640px]">
+    
+    <!-- Left Sidebar Mock -->
+    <div class="w-full md:w-64 bg-slate-900/90 border-b md:border-b-0 md:border-r border-slate-800 p-4 flex flex-col justify-between">
+      <div>
+        <!-- Brand Header -->
+        <div class="flex items-center gap-3 px-2 py-3 mb-4 border-b border-slate-800">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-600/40">
+            HP
+          </div>
+          <div>
+            <div class="text-sm font-bold text-white tracking-wide">SURVEILLANCE AI</div>
+            <div id="sidebarSubLabel" class="text-[11px] text-slate-400 font-medium">State Command HQ</div>
+          </div>
+        </div>
+
+        <!-- Sidebar Navigation Items -->
+        <nav class="space-y-1">
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Live Surveillance</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Upload Media</span>
+          </a>
+          <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+            <span>Movement Corridors</span>
+          </a>
+          
+          <!-- Unified ACCOUNTS Sidebar Button -->
+          <div class="pt-2">
+            <div class="px-3 pb-1 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Access Hierarchy</div>
+            <a href="#" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm transition">
+              <div class="flex items-center gap-3">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span id="sidebarMenuTitle">Accounts</span>
+              </div>
+              <span id="sidebarBadgeCount" class="px-1.5 py-0.5 rounded-full text-[10px] bg-indigo-500/30 text-indigo-200 font-bold">22 Dist</span>
+            </a>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Active User Profile Footnote -->
+      <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl mt-4">
+        <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Current Session:</div>
+        <div id="footerUserName" class="text-xs font-bold text-white mt-0.5">DGP Office Haryana (HQ)</div>
+        <div id="footerUserRole" class="text-[11px] text-emerald-400 font-mono">STATE ADMIN</div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Content Area -->
+    <div class="flex-1 p-5 md:p-6 flex flex-col justify-between bg-slate-950/40 overflow-y-auto">
+      
+      <!-- Top Title Bar -->
+      <div>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h1 id="pageTitle" class="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+              <span>🏛️</span> Haryana Police Officer Administration
+            </h1>
+            <p id="pageSubtitle" class="text-xs text-slate-400 mt-1">
+              Hierarchical district provisioning and ground operator naka assignments
+            </p>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <button id="btnActionCreate" onclick="openCreateModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span id="btnActionCreateText">+ Create District Admin</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= STATE ADMIN VIEW: DISTRICT TABS ================= -->
+        <div id="stateAdminDistrictTabsContainer" class="mt-5">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span>📍</span> Select District Jurisdiction
+            </span>
+            <span class="text-[11px] text-slate-400">Click any district to view its Admin &amp; active Nakas</span>
+          </div>
+          
+          <!-- District Pills Scroll / Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+            <button onclick="selectDistrict('panipat')" id="tab_panipat" class="district-tab active px-3 py-2.5 rounded-xl border text-left transition flex flex-col bg-indigo-600/20 border-indigo-500 text-white shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs">Panipat</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[11px] text-indigo-300 font-mono mt-1">4 Operators</span>
+            </button>
+
+            <button onclick="selectDistrict('karnal')" id="tab_karnal" class="district-tab px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-left transition flex flex-col">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs">Karnal</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[11px] text-slate-500 font-mono mt-1">3 Operators</span>
+            </button>
+
+            <button onclick="selectDistrict('gurugram')" id="tab_gurugram" class="district-tab px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-left transition flex flex-col">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs">Gurugram</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[11px] text-slate-500 font-mono mt-1">8 Operators</span>
+            </button>
+
+            <button onclick="selectDistrict('ambala')" id="tab_ambala" class="district-tab px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-left transition flex flex-col">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs">Ambala</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[11px] text-slate-500 font-mono mt-1">2 Operators</span>
+            </button>
+
+            <button onclick="selectDistrict('rohtak')" id="tab_rohtak" class="district-tab px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-left transition flex flex-col">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs">Rohtak</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[11px] text-slate-500 font-mono mt-1">3 Operators</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= DISTRICT ADMIN DETAILS HEADER CARD ================= -->
+        <div class="mt-5 p-4 rounded-xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-indigo-950/40 border border-slate-800 shadow-md">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-xl flex-shrink-0">
+                🏢
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span id="districtBadgeTitle" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    PANIPAT DISTRICT HQ
+                  </span>
+                  <span class="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Online
+                  </span>
+                </div>
+                <h2 id="districtAdminName" class="text-base font-extrabold text-white mt-1">
+                  SP Rajesh Mohan, IPS
+                </h2>
+                <div class="text-xs text-slate-400 flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
+                  <span>Belt: <strong id="districtAdminBelt" class="text-slate-200 font-mono">IPS-042/HBN</strong></span>
+                  <span>•</span>
+                  <span>Username: <strong id="districtAdminUser" class="text-slate-200 font-mono">admin_panipat</strong></span>
+                  <span>•</span>
+                  <span>HQ: <strong id="districtAdminStation" class="text-slate-200">SP Office, Mini Secretariat</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick District Stats Pills -->
+            <div class="flex items-center gap-3">
+              <div class="px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-center">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Active Nakas</div>
+                <div id="statNakasCount" class="text-sm font-extrabold text-indigo-400">4 Posts</div>
+              </div>
+              <div class="px-3 py-2 bg-slate-950/60 border border-slate-800 rounded-lg text-center">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Ground Officers</div>
+                <div id="statOperatorsCount" class="text-sm font-extrabold text-emerald-400">4 Assigned</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= OPERATORS LIST SECTION ================= -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                <span>👮</span> <span id="operatorsSubHeading">Ground Operators &amp; Naka Assignments</span>
+              </h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Duty officers stationed at surveillance checkpoints and naka barricades</p>
+            </div>
+            <span id="operatorsTableCount" class="text-xs text-indigo-400 font-bold font-mono">4 Officers Registered</span>
+          </div>
+
+          <!-- Operators Table -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/50 shadow-inner">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-bold border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Operator Name</th>
+                  <th class="py-3 px-4">Assigned Naka / Checkpoint</th>
+                  <th class="py-3 px-4">Belt / Batch No.</th>
+                  <th class="py-3 px-4">Duty Status</th>
+                  <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="operatorsTableBody" class="divide-y divide-slate-800/60 font-medium">
+                <!-- Row 1 -->
+                <tr class="hover:bg-slate-800/40 transition">
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-white">Constable Amit Kumar</div>
+                    <div class="text-[11px] text-slate-400 font-mono">op_5421</div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      📍 Sector 18 Toll Plaza Naka
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-slate-300">542/PPT</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active Shift
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openDetailsModal('Constable Amit Kumar', '542/PPT', 'Sector 18 Toll Plaza Naka', 'op_5421', 'Panipat District', 'CAM-01 / CAM-02', 'Active Shift (08:00 - 16:00)')" class="px-3 py-1 rounded bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-600 hover:text-white transition">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 2 -->
+                <tr class="hover:bg-slate-800/40 transition">
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-white">Head Constable Virender Singh</div>
+                    <div class="text-[11px] text-slate-400 font-mono">op_8192</div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      📍 North GT Road Highway Post
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-slate-300">819/PPT</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active Shift
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openDetailsModal('Head Constable Virender Singh', '819/PPT', 'North GT Road Highway Post', 'op_8192', 'Panipat District', 'CAM-03', 'Active Shift (08:00 - 16:00)')" class="px-3 py-1 rounded bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-600 hover:text-white transition">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr class="hover:bg-slate-800/40 transition">
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-white">Constable Pooja Rani</div>
+                    <div class="text-[11px] text-slate-400 font-mono">op_3021</div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                      📍 Panipat Bus Stand Junction
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-slate-300">302/PPT</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> Standby / Off-duty
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openDetailsModal('Constable Pooja Rani', '302/PPT', 'Panipat Bus Stand Junction', 'op_3021', 'Panipat District', 'Mobile PCR #04', 'Standby Shift (16:00 - 00:00)')" class="px-3 py-1 rounded bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-600 hover:text-white transition">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 4 -->
+                <tr class="hover:bg-slate-800/40 transition">
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-white">SI Kuldeep Malik</div>
+                    <div class="text-[11px] text-slate-400 font-mono">op_9941</div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      📍 Model Town Barricade
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-mono text-slate-300">994/PPT</td>
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active Shift
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button onclick="openDetailsModal('SI Kuldeep Malik', '994/PPT', 'Model Town Barricade', 'op_9941', 'Panipat District', 'CAM-04', 'Active Shift (08:00 - 16:00)')" class="px-3 py-1 rounded bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-600 hover:text-white transition">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Info Bar -->
+      <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+        <span>Surveillance Access Governance &bull; Haryana Police Telecommunications Wing</span>
+        <span class="font-mono text-indigo-400">RBAC Scope: Isolated Multi-Tenant</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: OPERATOR DETAILS ================= -->
+  <div id="modalOperatorDetails" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-lg">
+            👮
+          </div>
+          <div>
+            <h3 id="modalOpName" class="text-sm font-bold text-white">Constable Amit Kumar</h3>
+            <p id="modalOpRole" class="text-[11px] text-slate-400 font-medium">Ground Surveillance Officer</p>
+          </div>
+        </div>
+        <button onclick="closeDetailsModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="mt-4 space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Belt / Batch No</div>
+            <div id="modalOpBelt" class="font-mono font-bold text-slate-200 mt-0.5">542/PPT</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Assigned District</div>
+            <div id="modalOpDistrict" class="font-bold text-slate-200 mt-0.5">Panipat District</div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+          <div class="text-[10px] text-amber-400 font-bold uppercase">Assigned Checkpoint / Naka</div>
+          <div id="modalOpNaka" class="text-xs font-bold text-amber-200 mt-0.5">Sector 18 Toll Plaza Naka</div>
+          <div id="modalOpCam" class="text-[11px] text-amber-300/80 mt-1">Live Feed Channels: CAM-01 (North Gate), CAM-02 (Toll Lane)</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">System Username</div>
+            <div id="modalOpUser" class="font-mono font-bold text-indigo-300 mt-0.5">op_5421</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Duty Schedule</div>
+            <div id="modalOpShift" class="font-bold text-emerald-400 mt-0.5">Active Shift (08:00 - 16:00)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-800 flex justify-end">
+        <button onclick="closeDetailsModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DISTRICT_DATA = {
+      panipat: {
+        title: "PANIPAT DISTRICT HQ",
+        name: "SP Rajesh Mohan, IPS",
+        belt: "IPS-042/HBN",
+        user: "admin_panipat",
+        station: "SP Office, Mini Secretariat",
+        nakas: "4 Posts",
+        opCount: "4 Assigned",
+        operators: [
+          { name: "Constable Amit Kumar", user: "op_5421", belt: "542/PPT", naka: "Sector 18 Toll Plaza Naka", status: "Active Shift", cam: "CAM-01 / CAM-02", shift: "Active Shift (08:00 - 16:00)" },
+          { name: "Head Constable Virender Singh", user: "op_8192", belt: "819/PPT", naka: "North GT Road Highway Post", status: "Active Shift", cam: "CAM-03", shift: "Active Shift (08:00 - 16:00)" },
+          { name: "Constable Pooja Rani", user: "op_3021", belt: "302/PPT", naka: "Panipat Bus Stand Junction", status: "Standby / Off-duty", cam: "Mobile PCR #04", shift: "Standby Shift (16:00 - 00:00)" },
+          { name: "SI Kuldeep Malik", user: "op_9941", belt: "994/PPT", naka: "Model Town Barricade", status: "Active Shift", cam: "CAM-04", shift: "Active Shift (08:00 - 16:00)" }
+        ]
+      },
+      karnal: {
+        title: "KARNAL DISTRICT HQ",
+        name: "SP Shashank Kumar Sawan, IPS",
+        belt: "IPS-088/HBN",
+        user: "admin_karnal",
+        station: "SP Office Karnal, Mall Road",
+        nakas: "3 Posts",
+        opCount: "3 Assigned",
+        operators: [
+          { name: "ASI Rakesh Dhull", user: "op_karnal_1", belt: "104/KNL", naka: "Karna Lake Highway Naka", status: "Active Shift", cam: "CAM-KNL-01", shift: "Active Shift (08:00 - 16:00)" },
+          { name: "Constable Sandeep", user: "op_karnal_2", belt: "512/KNL", naka: "Nissing Crossing Barricade", status: "Active Shift", cam: "CAM-KNL-02", shift: "Active Shift (08:00 - 16:00)" },
+          { name: "Head Constable Manoj", user: "op_karnal_3", belt: "833/KNL", naka: "Gharaunda Toll Checkpoint", status: "Standby / Off-duty", cam: "CAM-KNL-03", shift: "Night Shift (20:00 - 04:00)" }
+        ]
+      },
+      gurugram: {
+        title: "GURUGRAM POLICE COMMISSIONERATE",
+        name: "CP Vikas Arora, IPS",
+        belt: "IPS-012/HBN",
+        user: "admin_gurugram",
+        station: "CP Office, Sohna Road",
+        nakas: "8 Posts",
+        opCount: "8 Assigned",
+        operators: [
+          { name: "Inspector Deepak", user: "op_ggn_1", belt: "901/GGN", naka: "Cyber Hub Rapid Toll Naka", status: "Active Shift", cam: "CAM-GGN-01/02", shift: "Active Shift" },
+          { name: "SI Naveen Yadav", user: "op_ggn_2", belt: "442/GGN", naka: "Kherki Daula Toll Plaza", status: "Active Shift", cam: "CAM-GGN-03/04", shift: "Active Shift" },
+          { name: "Constable Sunita", user: "op_ggn_3", belt: "219/GGN", naka: "Iffco Chowk Transit Point", status: "Active Shift", cam: "CAM-GGN-05", shift: "Active Shift" }
+        ]
+      },
+      ambala: {
+        title: "AMBALA DISTRICT HQ",
+        name: "SP Jashandeep Singh, IPS",
+        belt: "IPS-110/HBN",
+        user: "admin_ambala",
+        station: "SP Office Ambala City",
+        nakas: "2 Posts",
+        opCount: "2 Assigned",
+        operators: [
+          { name: "HC Ramesh Kumar", user: "op_amb_1", belt: "712/AMB", naka: "Shambhu Border Checkpost", status: "Active Shift", cam: "CAM-AMB-01", shift: "Active Shift" },
+          { name: "Constable Vikash", user: "op_amb_2", belt: "405/AMB", naka: "Cantt Railway Station Post", status: "Standby", cam: "CAM-AMB-02", shift: "Standby" }
+        ]
+      },
+      rohtak: {
+        title: "ROHTAK DISTRICT HQ",
+        name: "SP Himanshu Garg, IPS",
+        belt: "IPS-076/HBN",
+        user: "admin_rohtak",
+        station: "SP Office Rohtak Civil Lines",
+        nakas: "3 Posts",
+        opCount: "3 Assigned",
+        operators: [
+          { name: "SI Balwan Singh", user: "op_rtk_1", belt: "614/RTK", naka: "Delhi-Rohtak Highway Naka", status: "Active Shift", cam: "CAM-RTK-01", shift: "Active Shift" },
+          { name: "Constable Jasbir", user: "op_rtk_2", belt: "331/RTK", naka: "MDU Gate Surveillance Post", status: "Active Shift", cam: "CAM-RTK-02", shift: "Active Shift" }
+        ]
+      }
+    };
+
+    let currentRole = 'state'; // 'state' or 'district'
+    let currentSelectedDistrict = 'panipat';
+
+    function setPersona(role) {
+      currentRole = role;
+      const btnState = document.getElementById('btnRoleState');
+      const btnDist = document.getElementById('btnRoleDistrict');
+      const stateTabs = document.getElementById('stateAdminDistrictTabsContainer');
+      const sidebarSub = document.getElementById('sidebarSubLabel');
+      const sidebarBadge = document.getElementById('sidebarBadgeCount');
+      const footerUser = document.getElementById('footerUserName');
+      const footerRole = document.getElementById('footerUserRole');
+      const pageTitle = document.getElementById('pageTitle');
+      const pageSubtitle = document.getElementById('pageSubtitle');
+      const btnAction = document.getElementById('btnActionCreateText');
+
+      if (role === 'state') {
+        btnState.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/30";
+        btnDist.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white border border-slate-700";
+        stateTabs.style.display = 'block';
+        sidebarSub.innerText = "State Command HQ";
+        sidebarBadge.innerText = "22 Dist";
+        footerUser.innerText = "DGP Office Haryana (HQ)";
+        footerRole.innerText = "STATE ADMIN";
+        footerRole.className = "text-[11px] text-emerald-400 font-mono";
+        pageTitle.innerHTML = '<span>🏛️</span> Haryana Police Officer Administration';
+        pageSubtitle.innerText = "Hierarchical district provisioning and ground operator naka assignments";
+        btnAction.innerText = "+ Create District Admin";
+        selectDistrict(currentSelectedDistrict);
+      } else {
+        btnDist.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/30";
+        btnState.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white border border-slate-700";
+        stateTabs.style.display = 'none'; // District Admin can't see other 21 districts!
+        sidebarSub.innerText = "Panipat District Command";
+        sidebarBadge.innerText = "4 Nakas";
+        footerUser.innerText = "SP Office Panipat";
+        footerRole.innerText = "DISTRICT ADMIN";
+        footerRole.className = "text-[11px] text-amber-400 font-mono";
+        pageTitle.innerHTML = '<span>🏢</span> Panipat District - Operator Administration';
+        pageSubtitle.innerText = "Manage checkpoints and duty operators under Panipat jurisdiction";
+        btnAction.innerText = "+ Create Operator";
+        selectDistrict('panipat');
+      }
+    }
+
+    function selectDistrict(distKey) {
+      currentSelectedDistrict = distKey;
+      const data = DISTRICT_DATA[distKey];
+      if (!data) return;
+
+      // Update Tab Styles
+      document.querySelectorAll('.district-tab').forEach(tab => {
+        tab.className = "district-tab px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200 text-left transition flex flex-col";
+      });
+      const activeTab = document.getElementById('tab_' + distKey);
+      if (activeTab) {
+        activeTab.className = "district-tab active px-3 py-2.5 rounded-xl border text-left transition flex flex-col bg-indigo-600/20 border-indigo-500 text-white shadow-sm";
+      }
+
+      // Update District Header Details
+      document.getElementById('districtBadgeTitle').innerText = data.title;
+      document.getElementById('districtAdminName').innerText = data.name;
+      document.getElementById('districtAdminBelt').innerText = data.belt;
+      document.getElementById('districtAdminUser').innerText = data.user;
+      document.getElementById('districtAdminStation').innerText = data.station;
+      document.getElementById('statNakasCount').innerText = data.nakas;
+      document.getElementById('statOperatorsCount').innerText = data.opCount;
+      document.getElementById('operatorsTableCount').innerText = `${data.operators.length} Officers Registered`;
+      document.getElementById('operatorsSubHeading').innerText = `${distKey.toUpperCase()} Ground Operators & Naka Assignments`;
+
+      // Render Operators Table
+      const tbody = document.getElementById('operatorsTableBody');
+      tbody.innerHTML = data.operators.map(op => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="py-3 px-4">
+            <div class="font-bold text-white">${op.name}</div>
+            <div class="text-[11px] text-slate-400 font-mono">${op.user}</div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              📍 ${op.naka}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-mono text-slate-300">${op.belt}</td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold ${op.status.includes('Active') ? 'text-emerald-400' : 'text-slate-400'}">
+              <span class="w-1.5 h-1.5 rounded-full ${op.status.includes('Active') ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+              ${op.status}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="openDetailsModal('${op.name}', '${op.belt}', '${op.naka}', '${op.user}', '${data.title}', '${op.cam}', '${op.shift}')" class="px-3 py-1 rounded bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-600 hover:text-white transition">
+              View Details
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openDetailsModal(name, belt, naka, user, district, cam, shift) {
+      document.getElementById('modalOpName').innerText = name;
+      document.getElementById('modalOpBelt').innerText = belt;
+      document.getElementById('modalOpNaka').innerText = naka;
+      document.getElementById('modalOpUser').innerText = user;
+      document.getElementById('modalOpDistrict').innerText = district;
+      document.getElementById('modalOpCam').innerText = `Live Feed Channels: ${cam}`;
+      document.getElementById('modalOpShift').innerText = shift;
+      document.getElementById('modalOperatorDetails').style.display = 'flex';
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('modalOperatorDetails').style.display = 'none';
+    }
+
+    function openCreateModal() {
+      alert(currentRole === 'state' ? "Opening 'Create District Admin' form for Haryana HQ..." : "Opening 'Create Operator' form (Auto-locked to Panipat District)...");
+    }
+  </script>
+</body>
+</html>

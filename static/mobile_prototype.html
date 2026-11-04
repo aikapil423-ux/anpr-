@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Haryana Police Surveillance - Mobile Interface Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0e17;
+            --bg-surface: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-accent: #3b82f6;
+            --gold-accent: #f59e0b;
+            --danger-accent: #ef4444;
+            --success-accent: #10b981;
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 74px; /* Space for bottom nav */
+            overflow-x: hidden;
+        }
+
+        /* ================= MOBILE HEADER ================= */
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(10, 14, 23, 0.96);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 24px 14px 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-badge-pill {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 3px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .brand-titles h1 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.1;
+        }
+
+        .brand-titles span {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--danger-accent);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 1px 5px;
+            border: 2px solid var(--bg-base);
+        }
+
+        /* ================= COMPACT NON-INTRUSIVE ALERT BANNER ================= */
+        .mobile-alert-banner {
+            margin: 10px 14px 4px 14px;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.18), rgba(185, 28, 28, 0.28));
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 10px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: pulseAlert 2.5s infinite;
+        }
+
+        @keyframes pulseAlert {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.4); }
+            50% { border-color: rgba(239, 68, 68, 0.9); }
+        }
+
+        .alert-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .alert-icon-wrap {
+            background: rgba(239, 68, 68, 0.25);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f87171;
+            flex-shrink: 0;
+        }
+
+        .alert-text {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .alert-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #f87171;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .alert-detail {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .alert-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .btn-view-alert {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-dismiss-alert {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        /* ================= CAMERA VIEWPORT CARD ================= */
+        .stream-card-section {
+            padding: 10px 14px;
+        }
+
+        .camera-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .camera-header-bar {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cam-name-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .cam-meta-pills {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta-pill {
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+        }
+
+        .meta-pill.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        /* Mock Video Viewport */
+        .video-viewport {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-viewport img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.85);
+        }
+
+        /* Target Bounding Box Overlay */
+        .bbox-overlay {
+            position: absolute;
+            top: 25%;
+            left: 32%;
+            width: 36%;
+            height: 50%;
+            border: 2px solid #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 4px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+        }
+
+        .bbox-tag {
+            background: #ef4444;
+            color: white;
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 3px;
+            align-self: flex-start;
+            font-family: var(--font-mono);
+        }
+
+        .bbox-score {
+            background: rgba(0, 0, 0, 0.7);
+            color: #fbbf24;
+            font-size: 0.6rem;
+            font-family: var(--font-mono);
+            padding: 1px 4px;
+            border-radius: 2px;
+            align-self: flex-end;
+        }
+
+        /* Camera Controls Bar (Below Video - NEVER OBSTRUCTED) */
+        .camera-controls-bar {
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.95);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .touch-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 4px;
+            color: var(--text-primary);
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .touch-btn:active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            transform: scale(0.97);
+        }
+
+        .touch-btn.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #34d399;
+        }
+
+        /* ================= CAMERA SELECTOR CHIPS ================= */
+        .cam-selector-scroll {
+            padding: 4px 14px 12px 14px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .cam-selector-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cam-chip {
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .cam-chip.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        /* ================= METRIC STATS 2x2 ================= */
+        .stats-grid {
+            padding: 0 14px 14px 14px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: var(--font-mono);
+        }
+
+        .stat-sub {
+            font-size: 0.65rem;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* ================= RECENT LIVE DETECTIONS ================= */
+        .detections-section {
+            padding: 0 14px 20px 14px;
+        }
+
+        .section-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-all-link {
+            font-size: 0.75rem;
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .detection-card-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detection-card-item.danger-hit {
+            border-left: 4px solid #ef4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.08), var(--bg-surface));
+        }
+
+        .detection-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detection-thumb {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            background: #1e293b;
+        }
+
+        .detection-details h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: var(--font-mono);
+        }
+
+        .detection-details p {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        .hit-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        /* ================= BOTTOM MOBILE NAV BAR ================= */
+        .bottom-nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 62px;
+            background: rgba(10, 14, 23, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.15s ease;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+        }
+
+        .nav-item span {
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .nav-dot-badge {
+            position: absolute;
+            top: 8px;
+            right: 22px;
+            width: 7px;
+            height: 7px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        /* ================= SIDE SLIDE DRAWER ================= */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .drawer-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 82%;
+            max-width: 320px;
+            background: #0f172a;
+            border-right: 1px solid var(--border-color);
+            z-index: 160;
+            transform: translateX(-100%);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .side-drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .drawer-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drawer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .drawer-nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .drawer-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: background 0.15s ease;
+        }
+
+        .drawer-nav-link:active, .drawer-nav-link.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .drawer-footer {
+            padding-top: 14px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-drawer-logout {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= MOBILE HEADER ================= -->
+    <header class="mobile-header">
+        <div class="header-brand">
+            <button class="icon-btn" onclick="toggleDrawer()" title="Menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div class="brand-titles">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <h1>SURVEILLANCE</h1>
+                    <span class="brand-badge-pill">ANPR + FRS</span>
+                </div>
+                <span>Haryana Police • PHQ State Admin</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="icon-btn" onclick="showAlertsModal()" title="Alerts">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="notification-badge">3</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= NON-INTRUSIVE DISMISSIBLE ALERT BANNER ================= -->
+    <div class="mobile-alert-banner" id="mobileAlertBanner">
+        <div class="alert-left">
+            <div class="alert-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="alert-text">
+                <span class="alert-tag">HOTLIST ALERT (CAM-04)</span>
+                <span class="alert-detail">HR26-DK-8891 • Stolen Fortuner</span>
+            </div>
+        </div>
+        <div class="alert-actions-group">
+            <button class="btn-view-alert" onclick="alert('Viewing hotlist forensic report')">VIEW</button>
+            <button class="btn-dismiss-alert" onclick="dismissBanner()" title="Dismiss">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= HORIZONTAL CAMERA CHIP SELECTOR ================= -->
+    <div class="cam-selector-scroll">
+        <div class="cam-chip active">CAM-01 (Toll North)</div>
+        <div class="cam-chip">CAM-02 (Exit South)</div>
+        <div class="cam-chip">CAM-03 (Plaza Entry)</div>
+        <div class="cam-chip">CAM-04 (High Speed)</div>
+    </div>
+
+    <!-- ================= PRIMARY CAMERA STREAM CARD ================= -->
+    <div class="stream-card-section">
+        <div class="camera-card">
+            <div class="camera-header-bar">
+                <div class="cam-name-tag">
+                    <span class="live-dot"></span>
+                    <span>CAM-01 • Panipat Plaza</span>
+                </div>
+                <div class="cam-meta-pills">
+                    <span class="meta-pill">29.4 FPS</span>
+                    <span class="meta-pill active">ANPR+FRS</span>
+                </div>
+            </div>
+
+            <!-- 16:9 Viewport with bounding box -->
+            <div class="video-viewport">
+                <img src="/static/benchmark_sample.jpg" alt="Live Camera Feed">
+                <div class="bbox-overlay">
+                    <span class="bbox-tag">HR26-DK-8891</span>
+                    <span class="bbox-score">CONF: 98.4%</span>
+                </div>
+            </div>
+
+            <!-- UN-OBSTRUCTED CAMERA CONTROLS BAR -->
+            <div class="camera-controls-bar">
+                <button class="touch-btn" id="btnPause" onclick="togglePause()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    <span id="txtPause">Pause</span>
+                </button>
+                <button class="touch-btn" onclick="alert('Stream reconnect signal sent')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    <span>Reconnect</span>
+                </button>
+                <button class="touch-btn active" id="btnAiToggle" onclick="toggleAi()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                    <span>AI Mode</span>
+                </button>
+                <button class="touch-btn" onclick="alert('Entering Mobile Fullscreen')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                    <span>Fullscreen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2x2 METRICS STATS ================= -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Plates Scanned</span>
+            <span class="stat-value">1,482</span>
+            <span class="stat-sub">↑ 14 today</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Suspects Detected</span>
+            <span class="stat-value" style="color: #60a5fa;">24</span>
+            <span class="stat-sub">100% matched</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Active Cameras</span>
+            <span class="stat-value" style="color: #34d399;">4 / 4</span>
+            <span class="stat-sub">All Online</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Critical Alerts</span>
+            <span class="stat-value" style="color: #f87171;">3</span>
+            <span class="stat-sub" style="color: #f87171;">Action Needed</span>
+        </div>
+    </div>
+
+    <!-- ================= RECENT DETECTIONS FEED ================= -->
+    <div class="detections-section">
+        <div class="section-header-row">
+            <span class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Live Detections Log
+            </span>
+            <a href="#" class="view-all-link">View All →</a>
+        </div>
+
+        <!-- Detection Item 1 -->
+        <div class="detection-card-item danger-hit">
+            <div class="detection-info">
+                <img src="/static/benchmark_sample.jpg" class="detection-thumb" alt="Plate">
+                <div class="detection-details">
+                    <h4>HR26-DK-8891</h4>
+                    <p>CAM-01 • 15:42:10 • Stolen Vehicle</p>
+                </div>
+            </div>
+            <span class="hit-badge">HOTLIST HIT</span>
+        </div>
+
+        <!-- Detection Item 2 -->
+        <div class="detection-card-item">
+            <div class="detection-info">
+                <img src="/static/benchmark_sample.jpg" class="detection-thumb" alt="Plate">
+                <div class="detection-details">
+                    <h4>DL10-CA-4021</h4>
+                    <p>CAM-02 • 15:40:22 • Commercial Truck</p>
+                </div>
+            </div>
+            <span style="font-size: 0.72rem; color: #10b981; font-weight: 700; font-family: var(--font-mono);">CLEAN</span>
+        </div>
+    </div>
+
+    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+    <nav class="bottom-nav-bar">
+        <a class="nav-item active" onclick="switchNav(this)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            <span>Feeds</span>
+        </a>
+        <a class="nav-item" onclick="switchNav(this)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Search</span>
+        </a>
+        <a class="nav-item" onclick="switchNav(this)">
+            <div class="nav-dot-badge"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Alerts</span>
+        </a>
+        <a class="nav-item" onclick="switchNav(this)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Suspects</span>
+        </a>
+        <a class="nav-item" onclick="toggleDrawer()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <span>Menu</span>
+        </a>
+    </nav>
+
+    <!-- ================= SLIDE-OUT TOUCH DRAWER ================= -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <div class="drawer-user-info">
+                <div class="drawer-avatar">HP</div>
+                <div>
+                    <h3 style="font-size: 0.9rem; font-weight: 700; color: #fff;">State Admin</h3>
+                    <p style="font-size: 0.72rem; color: #94a3b8;">HP-HQ-001 • Panchkula</p>
+                </div>
+            </div>
+            <button class="icon-btn" onclick="toggleDrawer()" style="width: 32px; height: 32px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+
+        <ul class="drawer-nav-list">
+            <li><a href="#" class="drawer-nav-link active">📹 Multi-Camera Live Feeds</a></li>
+            <li><a href="#" class="drawer-nav-link">🔍 Smart Vehicle Search</a></li>
+            <li><a href="#" class="drawer-nav-link">👥 FRS Suspect Database</a></li>
+            <li><a href="#" class="drawer-nav-link">🚨 Hotlist Alert Audit Logs</a></li>
+            <li><a href="#" class="drawer-nav-link">📍 Vehicle Movement Trails</a></li>
+            <li><a href="#" class="drawer-nav-link">👮 Officer & User Management</a></li>
+            <li><a href="#" class="drawer-nav-link">⚙️ System & AI Settings</a></li>
+        </ul>
+
+        <div class="drawer-footer">
+            <button class="btn-drawer-logout" onclick="alert('Logging out...')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout from Mobile Session
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function toggleDrawer() {
+            const drawer = document.getElementById('sideDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        function dismissBanner() {
+            const banner = document.getElementById('mobileAlertBanner');
+            banner.style.display = 'none';
+        }
+
+        function togglePause() {
+            const txt = document.getElementById('txtPause');
+            const btn = document.getElementById('btnPause');
+            if (txt.innerText === 'Pause') {
+                txt.innerText = 'Resume';
+                btn.style.borderColor = '#fbbf24';
+                btn.style.color = '#fbbf24';
+            } else {
+                txt.innerText = 'Pause';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        }
+
+        function toggleAi() {
+            const btn = document.getElementById('btnAiToggle');
+            btn.classList.toggle('active');
+        }
+
+        function switchNav(el) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function showAlertsModal() {
+            alert('Emergency Alert Drawer: 3 unreviewed hotlist matches in last 1 hour.');
+        }
+    </script>
+</body>
+</html>

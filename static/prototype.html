@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive AI Engine Bar Prototype</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom Apple-Style Segmented Pill Transition */
+    .pill-btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      user-select: none;
+    }
+    .pill-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+      font-weight: 700;
+    }
+    .pill-btn:not(.active):hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+    }
+    /* Pulse glow for Live Latency */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 0.2; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .latency-pulse-ring {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+    /* Tooltip Glassmorphism Box */
+    #hoverSpecsTooltip {
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-3">
+
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl p-5 shadow-2xl max-w-5xl mx-auto space-y-5">
+    
+    <!-- Top Prototype Banner -->
+    <div class="flex items-center justify-between border-b border-[var(--border)] pb-3 flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+          PROTOTYPE PREVIEW
+        </span>
+        <h2 class="text-sm font-bold text-[var(--foreground)]">
+          Segmented Slider Pills + Live Latency Badge + Hover Specs Tooltip
+        </h2>
+      </div>
+      <div class="text-xs text-[var(--muted-foreground)]">
+        💡 Hover on any model pill to see live specs card
+      </div>
+    </div>
+
+    <!-- ================= PROTOTYPE: AI MODEL ENGINE BAR ================= -->
+    <div class="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3.5 shadow-lg space-y-3 relative">
+      
+      <!-- Top Row: ANPR & FRS Control Strips -->
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        
+        <!-- ANPR Group Strip -->
+        <div class="flex items-center gap-3 bg-slate-950/70 p-1.5 px-3 rounded-lg border border-slate-800">
+          <div class="flex items-center gap-1.5 text-xs font-extrabold text-indigo-400 tracking-wider">
+            <span>🚗</span>
+            <span>ANPR</span>
+          </div>
+
+          <!-- Vehicle Segmented Control -->
+          <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-700/60" id="groupVehicle">
+            <button type="button" class="pill-btn active px-2.5 py-1 text-xs rounded-md" data-mid="uvh26_yolo11x" onmouseenter="showTooltip(event, 'uvh26_yolo11x')" onmouseleave="hideTooltip()" onclick="selectPill('groupVehicle', this, 'uvh26_yolo11x')">
+              IISc UVH-26 🇮🇳
+            </button>
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="driveindia_tihan_yolov10x" onmouseenter="showTooltip(event, 'driveindia_tihan_yolov10x')" onmouseleave="hideTooltip()" onclick="selectPill('groupVehicle', this, 'driveindia_tihan_yolov10x')">
+              TiHAN 10x 🇮🇳
+            </button>
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="driveindia_tihan_yolov10m" onmouseenter="showTooltip(event, 'driveindia_tihan_yolov10m')" onmouseleave="hideTooltip()" onclick="selectPill('groupVehicle', this, 'driveindia_tihan_yolov10m')">
+              TiHAN 10m ⚖️
+            </button>
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="yolo11n" onmouseenter="showTooltip(event, 'yolo11n')" onmouseleave="hideTooltip()" onclick="selectPill('groupVehicle', this, 'yolo11n')">
+              YOLO11n ⚡
+            </button>
+          </div>
+
+          <div class="h-4 w-px bg-slate-700"></div>
+
+          <!-- License Plate Segmented Control -->
+          <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-700/60" id="groupPlate">
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="rtdetrv2_x_plate" onmouseenter="showTooltip(event, 'rtdetrv2_x_plate')" onmouseleave="hideTooltip()" onclick="selectPill('groupPlate', this, 'rtdetrv2_x_plate')">
+              RT-DETR 🇮🇳
+            </button>
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="indian_lpr_combo" onmouseenter="showTooltip(event, 'indian_lpr_combo')" onmouseleave="hideTooltip()" onclick="selectPill('groupPlate', this, 'indian_lpr_combo')">
+              Indian LPR 🇮🇳
+            </button>
+            <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="yolo11l_indian_plate" onmouseenter="showTooltip(event, 'yolo11l_indian_plate')" onmouseleave="hideTooltip()" onclick="selectPill('groupPlate', this, 'yolo11l_indian_plate')">
+              Night CLAHE 🇮🇳
+            </button>
+            <button type="button" class="pill-btn active px-2.5 py-1 text-xs rounded-md" data-mid="yolo11s_plate" onmouseenter="showTooltip(event, 'yolo11s_plate')" onmouseleave="hideTooltip()" onclick="selectPill('groupPlate', this, 'yolo11s_plate')">
+              YOLO11s Plate 🇮🇳
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Live Latency Pill + Rename Trigger -->
+        <div class="flex items-center gap-2.5 flex-wrap">
+          
+          <!-- FEATURE 2: Live Engine Latency Pill with Pulsing Glow -->
+          <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/35 px-3 py-1.5 rounded-full shadow-inner" title="Live PyTorch CPU Execution Latency (Updated per frame)">
+            <div class="relative flex items-center justify-center">
+              <span class="w-2.5 h-2.5 bg-emerald-400 rounded-full"></span>
+              <span class="absolute w-4 h-4 bg-emerald-400/40 rounded-full latency-pulse-ring"></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs font-mono">
+              <span class="text-emerald-400 font-bold" id="liveLatencyVal">41.8 ms</span>
+              <span class="text-slate-500">|</span>
+              <span class="text-emerald-300/80 font-semibold" id="liveFpsVal">24.0 FPS</span>
+            </div>
+          </div>
+
+          <!-- Rename Button -->
+          <button type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/30 transition flex items-center gap-1">
+            <span>✏️</span>
+            <span>Rename</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Bottom Row: FRS Strip (Person + Face Detector + Embedder) -->
+      <div class="flex items-center gap-3 bg-slate-950/70 p-1.5 px-3 rounded-lg border border-slate-800 flex-wrap">
+        <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-400 tracking-wider">
+          <span>👤</span>
+          <span>FRS</span>
+        </div>
+
+        <!-- Person Detector Segmented Control -->
+        <div class="flex items-center gap-1.5 bg-slate-900 p-0.5 rounded-lg border border-slate-700/60" id="groupPerson">
+          <span class="text-[11px] text-slate-400 pl-1.5 font-medium">Person:</span>
+          <button type="button" class="pill-btn active px-2.5 py-1 text-xs rounded-md" data-mid="driveindia_tihan_yolov10x" onmouseenter="showTooltip(event, 'driveindia_tihan_yolov10x')" onmouseleave="hideTooltip()" onclick="selectPill('groupPerson', this, 'driveindia_tihan_yolov10x')">
+            TiHAN 10x 🇮🇳
+          </button>
+          <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="driveindia_tihan_yolov10m" onmouseenter="showTooltip(event, 'driveindia_tihan_yolov10m')" onmouseleave="hideTooltip()" onclick="selectPill('groupPerson', this, 'driveindia_tihan_yolov10m')">
+            TiHAN 10m ⚖️
+          </button>
+          <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="yolo11n" onmouseenter="showTooltip(event, 'yolo11n')" onmouseleave="hideTooltip()" onclick="selectPill('groupPerson', this, 'yolo11n')">
+            YOLO11n ⚡
+          </button>
+        </div>
+
+        <div class="h-4 w-px bg-slate-700"></div>
+
+        <!-- Face Detector Segmented Control -->
+        <div class="flex items-center gap-1.5 bg-slate-900 p-0.5 rounded-lg border border-slate-700/60" id="groupFace">
+          <span class="text-[11px] text-slate-400 pl-1.5 font-medium">Face:</span>
+          <button type="button" class="pill-btn active px-2.5 py-1 text-xs rounded-md" data-mid="scrfd_10g" onmouseenter="showTooltip(event, 'scrfd_10g')" onmouseleave="hideTooltip()" onclick="selectPill('groupFace', this, 'scrfd_10g')">
+            SCRFD-10G ⚡
+          </button>
+          <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="dsfd_r152" onmouseenter="showTooltip(event, 'dsfd_r152')" onmouseleave="hideTooltip()" onclick="selectPill('groupFace', this, 'dsfd_r152')">
+            DSFD-152 🏆
+          </button>
+        </div>
+
+        <div class="h-4 w-px bg-slate-700"></div>
+
+        <!-- Embedder Segmented Control -->
+        <div class="flex items-center gap-1.5 bg-slate-900 p-0.5 rounded-lg border border-slate-700/60" id="groupEmbedder">
+          <span class="text-[11px] text-slate-400 pl-1.5 font-medium">Embedder:</span>
+          <button type="button" class="pill-btn active px-2.5 py-1 text-xs rounded-md" data-mid="arcface_r34" onmouseenter="showTooltip(event, 'arcface_r34')" onmouseleave="hideTooltip()" onclick="selectPill('groupEmbedder', this, 'arcface_r34')">
+            ArcFace R34 ⚡
+          </button>
+          <button type="button" class="pill-btn px-2.5 py-1 text-xs rounded-md text-slate-300" data-mid="arcface_iresnet50" onmouseenter="showTooltip(event, 'arcface_iresnet50')" onmouseleave="hideTooltip()" onclick="selectPill('groupEmbedder', this, 'arcface_iresnet50')">
+            iResNet-50 ⚖️
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ================= FEATURE 1: SLEEK HOVER SPECS TOOLTIP CARD ================= -->
+      <div id="hoverSpecsTooltip" class="absolute z-50 bg-slate-900/95 border border-indigo-500/50 rounded-xl p-3 shadow-2xl text-xs w-72 opacity-0 transform -translate-y-2 pointer-events-none transition-all duration-150">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <span id="ttName" class="font-bold text-white text-[13px]">Model Name</span>
+          <span id="ttOrigin" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Origin</span>
+        </div>
+        
+        <p id="ttDesc" class="text-slate-400 text-[11px] mb-2.5 leading-relaxed">Description</p>
+        
+        <div class="grid grid-cols-3 gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 text-center font-mono">
+          <div>
+            <div class="text-[10px] text-slate-500">SIZE</div>
+            <div id="ttSize" class="text-xs font-bold text-slate-200">0 MB</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">SPEED</div>
+            <div id="ttFps" class="text-xs font-bold text-emerald-400">0 FPS</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">ACCURACY</div>
+            <div id="ttAccuracy" class="text-xs font-bold text-indigo-400">0% mAP</div>
+          </div>
+        </div>
+
+        <div class="mt-2 text-[10px] text-slate-500 text-right">
+          ⚡ Latency: <span id="ttLatency" class="text-slate-300 font-semibold font-mono">0 ms</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Active State Telemetry Feedback -->
+    <div class="p-3 bg-[var(--background)]/60 rounded-xl border border-[var(--border)] text-xs flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-semibold text-slate-300">Active Pipeline:</span>
+        <span id="activePipelineSummary" class="text-indigo-400 font-mono font-medium">
+          ANPR: [IISc UVH-26 + YOLO11s Plate] | FRS: [TiHAN 10x + SCRFD-10G + ArcFace R34]
+        </span>
+      </div>
+      <span class="text-slate-500 text-[11px]">Segmented Slider controls update active pipeline with zero reloads</span>
+    </div>
+
+  </div>
+
+  <script>
+    // Model Telemetry Database for Interactive Hover Specs
+    const MODEL_SPECS = {
+      uvh26_yolo11x: {
+        name: "IISc UVH-26 (YOLOv11x)",
+        origin: "🇮🇳 IISc Bangalore",
+        size: "326.6 MB",
+        fps: "14 FPS",
+        latency: "71.4 ms",
+        accuracy: "89.4% mAP",
+        desc: "14 Indian vehicle classes: Auto, Tempo, Truck, Bus, etc. High-accuracy research benchmark."
+      },
+      driveindia_tihan_yolov10x: {
+        name: "DriveIndia TiHAN YOLOv10x",
+        origin: "🇮🇳 TiHAN Hyderabad",
+        size: "122.3 MB",
+        fps: "22 FPS",
+        latency: "45.2 ms",
+        accuracy: "91.8% mAP",
+        desc: "Simultaneous Indian vehicle & pedestrian dual tracking trained on TiHAN autonomous dataset."
+      },
+      driveindia_tihan_yolov10m: {
+        name: "DriveIndia TiHAN YOLOv10m",
+        origin: "🇮🇳 TiHAN Hyderabad",
+        size: "63.8 MB",
+        fps: "36 FPS",
+        latency: "27.8 ms",
+        accuracy: "87.6% mAP",
+        desc: "Balanced edge latency baseline for Indian traffic surveillance & edge inference."
+      },
+      yolo11n: {
+        name: "YOLO11n Nano Baseline",
+        origin: "🌐 Global Ultralytics",
+        size: "5.6 MB",
+        fps: "68 FPS",
+        latency: "14.7 ms",
+        accuracy: "78.2% mAP",
+        desc: "Ultra-fast lightweight vehicle & pedestrian baseline with minimal CPU overhead."
+      },
+      rtdetrv2_x_plate: {
+        name: "RT-DETRv2-X Plate",
+        origin: "🇮🇳 IISc Bangalore",
+        size: "129.5 MB",
+        fps: "20 FPS",
+        latency: "50.0 ms",
+        accuracy: "94.2% mAP",
+        desc: "Heavy Real-Time Transformer for cluttered multi-lane Indian plates."
+      },
+      indian_lpr_combo: {
+        name: "Indian_LPR Combo",
+        origin: "🇮🇳 Indian Traffic",
+        size: "34.7 MB",
+        fps: "32 FPS",
+        latency: "31.2 ms",
+        accuracy: "92.5% mAP",
+        desc: "Specialized polygon semantic segmentation & LPRNet combo for tilted & auto-rickshaw plates."
+      },
+      yolo11l_indian_plate: {
+        name: "YOLO11l Indian Night",
+        origin: "🇮🇳 CLAHE Filtered",
+        size: "49.0 MB",
+        fps: "28 FPS",
+        latency: "35.7 ms",
+        accuracy: "90.7% mAP",
+        desc: "Coupled with CLAHE contrast filtering for low-light & night traffic plate detection."
+      },
+      yolo11s_plate: {
+        name: "YOLO11s Indian Plate",
+        origin: "🇮🇳 High Recall",
+        size: "18.3 MB",
+        fps: "48 FPS",
+        latency: "20.8 ms",
+        accuracy: "89.1% mAP",
+        desc: "High-recall model trained on diverse Indian plates, non-standard fonts & 2-wheelers."
+      },
+      scrfd_10g: {
+        name: "SCRFD-10G InsightFace",
+        origin: "🌐 Global ONNX SOTA",
+        size: "16.2 MB",
+        fps: "52 FPS",
+        latency: "19.2 ms",
+        accuracy: "94.8% WiderFace",
+        desc: "Ultra-fast face detection & 5-point biometric landmarks. Ideal for 24x7 live RTSP feeds."
+      },
+      dsfd_r152: {
+        name: "DSFD ResNet-152 Forensics",
+        origin: "🌐 Heavy Dual-Shot",
+        size: "459.0 MB",
+        fps: "9 FPS",
+        latency: "111.0 ms",
+        accuracy: "97.6% WiderFace",
+        desc: "Deep ResNet-152 dual-shot detector for tiny distant faces & forensic CCTV audits."
+      },
+      arcface_r34: {
+        name: "ArcFace ResNet-34",
+        origin: "🌐 Fast ONNX 512-D",
+        size: "130.3 MB",
+        fps: "45 FPS",
+        latency: "22.2 ms",
+        accuracy: "99.5% LFW",
+        desc: "Fast 34-layer ArcFace ONNX embedder extracting 512-D unit vectors with high CPU speed."
+      },
+      arcface_iresnet50: {
+        name: "ArcFace iResNet-50",
+        origin: "🌐 WebFace600K SOTA",
+        size: "166.3 MB",
+        fps: "26 FPS",
+        latency: "38.5 ms",
+        accuracy: "99.8% LFW",
+        desc: "50-layer improved ResNet trained on WebFace600K. Optimal balance of accuracy and latency."
+      }
+    };
+
+    // Pill Selector logic
+    function selectPill(groupId, btnEl, mid) {
+      const container = document.getElementById(groupId);
+      if (!container) return;
+      container.querySelectorAll('.pill-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('text-slate-300');
+      });
+      btnEl.classList.add('active');
+      btnEl.classList.remove('text-slate-300');
+      updateActiveSummary();
+    }
+
+    function updateActiveSummary() {
+      const getActive = (gid) => {
+        const el = document.getElementById(gid);
+        return el ? (el.querySelector('.pill-btn.active')?.innerText.trim() || '') : '';
+      };
+      const v = getActive('groupVehicle');
+      const pl = getActive('groupPlate');
+      const pr = getActive('groupPerson');
+      const f = getActive('groupFace');
+      const em = getActive('groupEmbedder');
+      const sum = document.getElementById('activePipelineSummary');
+      if (sum) {
+        sum.innerText = `ANPR: [${v} + ${pl}] | FRS: [${pr} + ${f} + ${em}]`;
+      }
+    }
+
+    // Tooltip logic
+    const tt = document.getElementById('hoverSpecsTooltip');
+    function showTooltip(e, mid) {
+      const data = MODEL_SPECS[mid];
+      if (!data || !tt) return;
+
+      document.getElementById('ttName').innerText = data.name;
+      document.getElementById('ttOrigin').innerText = data.origin;
+      document.getElementById('ttDesc').innerText = data.desc;
+      document.getElementById('ttSize').innerText = data.size;
+      document.getElementById('ttFps').innerText = data.fps;
+      document.getElementById('ttAccuracy').innerText = data.accuracy;
+      document.getElementById('ttLatency').innerText = data.latency;
+
+      const rect = e.target.getBoundingClientRect();
+      const parentRect = tt.parentElement.getBoundingClientRect();
+
+      let left = rect.left - parentRect.left;
+      let top = rect.bottom - parentRect.top + 8;
+
+      if (left + 290 > parentRect.width) {
+        left = parentRect.width - 295;
+      }
+      if (left < 0) left = 10;
+
+      tt.style.left = left + 'px';
+      tt.style.top = top + 'px';
+      tt.style.opacity = '1';
+      tt.style.transform = 'translateY(0)';
+    }
+
+    function hideTooltip() {
+      if (!tt) return;
+      tt.style.opacity = '0';
+      tt.style.transform = 'translateY(-6px)';
+    }
+
+    // Realistic Live Latency fluctuate simulation
+    setInterval(() => {
+      const latEl = document.getElementById('liveLatencyVal');
+      const fpsEl = document.getElementById('liveFpsVal');
+      if (latEl && fpsEl) {
+        const base = 41.5 + (Math.random() * 2.2 - 1.1);
+        latEl.innerText = base.toFixed(1) + ' ms';
+        const fps = 1000 / base;
+        fpsEl.innerText = fps.toFixed(1) + ' FPS';
+      }
+    }, 1200);
+  </script>
+</body>
+</html>

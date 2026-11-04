@@ -1,0 +1,14 @@
+#!/bin/sh
+# Git post-merge hook: runs automatically after every 'git pull'
+echo ""
+echo "================================================================="
+echo ">> [GIT HOOK] Pull completed! Verifying AI model weights..."
+echo "================================================================="
+
+if command -v python3 >/dev/null 2>&1; then
+    python3 scripts/download_models.py
+elif command -v python >/dev/null 2>&1; then
+    python scripts/download_models.py
+elif command -v py >/dev/null 2>&1; then
+    py scripts/download_models.py
+fi
