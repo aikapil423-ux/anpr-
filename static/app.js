@@ -6502,6 +6502,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (trailHistoryModal) trailHistoryModal.style.display = 'flex';
     await loadTrailHistoryData();
   };
+  document.getElementById('btnClearCurrentVehicleTrail')?.addEventListener('click', async (event) => {
+    const vehicleId = activeTrailVehicleId;
+    if (!vehicleId || !confirm(`Clear all trail sightings for ${activeTrailDisplayNumber}? This includes sightings outside the current filters. The registered vehicle will remain in the watchlist.`)) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const response = await fetch(`/api/trails/vehicle/${vehicleId}`, {method: 'DELETE'});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Could not clear this trail.');
+      if (activeTrailVehicleId === vehicleId) {
+        currentTrailHistoryData = [];
+        await loadTrailHistoryData();
+      }
+      if (typeof window.refreshMasterTrail === 'function') await window.refreshMasterTrail();
+      if (typeof showToastAlert === 'function') showToastAlert(`${data.deleted_sightings || 0} trail sightings cleared.`, 'success');
+    } catch (error) {
+      alert(error.message || 'Could not clear this trail.');
+    } finally {
+      button.disabled = false;
+    }
+  });
   async function loadTrailHistoryData() {
     if (!activeTrailVehicleId) return;
     try {
