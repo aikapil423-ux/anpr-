@@ -3,7 +3,7 @@
 'use strict';
 window.vehicleTrailReviewMode=true;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let rows=[], busy=false, filter='all', query='', selectedPlate=null, map=null, layers=[], routeVersion=0, lastRouteSignature='', lastListSignature='';
+let rows=[], busy=false, filter='matched', query='', selectedPlate=null, map=null, layers=[], routeVersion=0, lastRouteSignature='', lastListSignature='';
 const matched = row => ['EXACT','SAME'].includes(row.status);
 const status = row => ({EXACT:'Exact match · Auto added',PENDING:'Near match · Review needed',SAME:'Same · Confirmed',NOT_SAME:'Not Same · Normal detection',NORMAL:'Normal detection'}[row.status]||row.status);
 const image = (url,label) => url ? `<img class="vtr-photo" src="${esc(url)}" alt="${esc(label)}" loading="lazy" role="button" tabindex="0" title="Click to enlarge image" aria-label="Enlarge ${esc(label)}">` : '<div class="vtr-no-photo">Photo unavailable</div>';
@@ -13,7 +13,7 @@ function enlargeReviewPhoto(event){
  if(!photo)return;
  if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;
  event.preventDefault();
- window.openImageZoomModal?.(photo.currentSrc||photo.src,photo.alt);
+ window.openImageZoomModal?.(photo.currentSrc||photo.src,photo.alt,photo);
 }
 document.addEventListener('click',enlargeReviewPhoto);
 document.addEventListener('keydown',enlargeReviewPhoto);
@@ -82,7 +82,7 @@ async function renderRoute(plate){
  const version=++routeVersion,section=document.getElementById('vtrRoute');section.hidden=false;
  const sightings=rows.filter(r=>r.route_plate===plate&&r.status!=='PENDING').sort((a,b)=>a.epoch-b.epoch||a.id-b.id);
  document.getElementById('vtrRouteTitle').textContent=`Vehicle trail · ${plate}`;
- document.getElementById('vtrTimeline').innerHTML=sightings.map((r,i)=>`<li><strong>${i+1}. ${esc(r.location||'Location not registered')}</strong> · ${esc(r.captured_at)}<br><span>${esc(r.camera_id||'No registered camera')} · Detected: ${esc(r.detected_plate)} · ${esc(status(r))}</span></li>`).join('');
+ document.getElementById('vtrTimeline').innerHTML=sightings.map((r,i)=>`<li><strong>${esc(r.location||'Location not registered')}</strong> · ${esc(r.captured_at)}<br><span>${esc(r.camera_id||'No registered camera')} · Detected: ${esc(r.detected_plate)} · ${esc(status(r))}</span><div class="vtr-sighting-photos"><div><span class="vtr-label">Detected plate</span>${image(r.plate_photo,'Sighting '+(i+1)+' — detected plate')}</div><div><span class="vtr-label">Detected vehicle</span>${image(r.vehicle_photo,'Sighting '+(i+1)+' — detected vehicle')}</div></div></li>`).join('');
  const points=sightings.filter(r=>Number.isFinite(r.lat)&&Number.isFinite(r.lng));
  const caption=document.getElementById('vtrRouteCaption');
  if(!window.L){caption.textContent='Map could not load. The chronological sightings remain available below.';return;}
@@ -117,7 +117,7 @@ async function renderRoute(plate){
 }
 function init(){
  const view=document.getElementById('subviewVehicleTrail');if(!view)return;
- const panel=document.createElement('section');panel.id='vehicleTrailReviewPanel';panel.innerHTML=`<div class="vtr-heading"><h3>Vehicle trails</h3><button type="button" class="btn btn-danger" id="vtrClear">Clear entries</button><button type="button" class="btn btn-secondary" id="vtrRefresh">Refresh</button></div><p id="vtrSummary">Loading camera sightings…</p><div class="vtr-toolbar"><input type="search" id="vtrSearch" aria-label="Search vehicle trails" placeholder="Search number or camera…"><button class="filter-btn active" data-vtr-filter="all">All trails</button><button class="filter-btn" data-vtr-filter="pending">Needs review <span id="vtrPendingCount">0</span></button><button class="filter-btn" data-vtr-filter="matched">Watchlist matched</button></div><p id="vtrError" role="status"></p><p id="vtrFeedback" role="status"></p><section id="vtrRoute" hidden><div class="vtr-heading"><h4 id="vtrRouteTitle"></h4><button class="btn btn-secondary" data-close-route>Close map</button></div><p id="vtrRouteCaption"></p><div id="vtrMap"></div><ol id="vtrTimeline"></ol></section><div id="vtrList"></div>`;
+ const panel=document.createElement('section');panel.id='vehicleTrailReviewPanel';panel.innerHTML=`<div class="vtr-heading"><h3>Vehicle trails</h3><button type="button" class="btn btn-danger" id="vtrClear">Clear entries</button><button type="button" class="btn btn-secondary" id="vtrRefresh">Refresh</button></div><p id="vtrSummary">Loading camera sightings…</p><div class="vtr-toolbar"><input type="search" id="vtrSearch" aria-label="Search vehicle trails" placeholder="Search number or camera…"><button class="filter-btn" data-vtr-filter="all">All trails</button><button class="filter-btn" data-vtr-filter="pending">Needs review <span id="vtrPendingCount">0</span></button><button class="filter-btn active" data-vtr-filter="matched">Watchlist matched</button></div><p id="vtrError" role="status"></p><p id="vtrFeedback" role="status"></p><section id="vtrRoute" hidden><div class="vtr-heading"><h4 id="vtrRouteTitle"></h4><button class="btn btn-secondary" data-close-route>Close map</button></div><p id="vtrRouteCaption"></p><div id="vtrMap"></div><ol id="vtrTimeline"></ol></section><div id="vtrList"></div>`;
  // Keep the previous registered-vehicle history available below the new workflow.
  const legacy=document.createElement('details');legacy.className='vtr-legacy';legacy.innerHTML='<summary>Registered vehicle history & filters</summary>';while(view.firstChild)legacy.append(view.firstChild);view.append(panel,legacy);
  panel.addEventListener('click',e=>{const button=e.target.closest('button');if(!button)return;if(button.dataset.decision)decide(Number(button.dataset.id),button.dataset.decision,button);else if(button.dataset.route){selectedPlate=button.dataset.route;lastRouteSignature=JSON.stringify(rows.filter(r=>r.route_plate===selectedPlate));renderRoute(selectedPlate);document.getElementById('vtrRoute').scrollIntoView({behavior:'smooth',block:'start'});}else if(button.hasAttribute('data-close-route')){selectedPlate=null;routeVersion++;document.getElementById('vtrRoute').hidden=true;}else if(button.dataset.vtrFilter){filter=button.dataset.vtrFilter;render();}});
@@ -139,6 +139,15 @@ function init(){
   finally{busy=false;button.disabled=false;}
  });
  const viewPanel=document.getElementById('viewMasterTrail');new MutationObserver(()=>{if(viewPanel.style.display!=='none')refresh();}).observe(viewPanel,{attributes:true,attributeFilter:['style']});
+ // Opening trails from navigation always starts with watchlist matches.
+ for(const id of ['navMasterTrailBtn','navVehicleTrailBtn']){
+  document.getElementById(id)?.addEventListener('click',()=>{
+   filter='matched';query='';selectedPlate=null;routeVersion++;lastRouteSignature='';
+   document.getElementById('vtrSearch').value='';
+   document.getElementById('vtrRoute').hidden=true;
+   render();refresh();
+  },true);
+ }
  document.getElementById('btnAlertBell')?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();filter='pending';window.switchTab?.('master-trail');refresh();render();},true);
  window.refreshVehicleTrailReview=refresh;
  setInterval(()=>{if(!document.hidden&&viewPanel.style.display!=='none')refresh();},5000);

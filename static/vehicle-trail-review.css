@@ -13,3 +13,5 @@
 /* Taller, centered route map with room for camera popup details. */
 #vtrMap{width:100%;max-width:1000px;height:620px;max-height:78vh;min-height:360px;margin:16px auto}
 @media(max-width:600px){#vtrMap{height:480px;min-height:300px;max-height:70vh}}
+
+.vtr-sighting-photos{display:grid;grid-template-columns:repeat(2,minmax(0,280px));gap:14px;margin:12px 0}.vtr-sighting-photos .vtr-photo{height:150px}.vtr-sighting-photos .vtr-label{color:#172033!important;font-weight:650}@media(max-width:600px){.vtr-sighting-photos{grid-template-columns:minmax(0,1fr)}}

@@ -68,7 +68,7 @@
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
 <link href="/static/simple-ui.css?v=2" rel="stylesheet"/>
-<link href="/static/light-ui.css?v=9" rel="stylesheet"/><link rel="stylesheet" href="/static/vehicle-trail-review.css?v=tall-map-2">
+<link href="/static/light-ui.css?v=9" rel="stylesheet"/><link rel="stylesheet" href="/static/vehicle-trail-review.css?v=trail-photos-3">
 </head>
 <body class="ui-light">
 <header class="app-header">
@@ -5333,9 +5333,9 @@
 </div>
 <!-- Leaflet JS Engine for Police Route Mapping -->
 <script src="/static/vendor/leaflet/leaflet.js"></script>
-<script>window.KARNAL_CAMERA_MODE = true;</script><script src="/static/app.js?v=image-wheel-zoom-1"></script><script src="/static/camera-registry.js?v=anpr-colours-1"></script>
+<script>window.KARNAL_CAMERA_MODE = true;</script><script src="/static/app.js?v=image-gallery-2"></script><script src="/static/camera-registry.js?v=anpr-colours-1"></script>
 <script src="/static/simple-ui.js?v=3"></script>
-<script src="/static/vehicle-trail-review.js?v=tall-map-6"></script>
+<script src="/static/vehicle-trail-review.js?v=image-gallery-9"></script>
 <script>
 
 
@@ -6100,15 +6100,18 @@
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:white;">
 <strong id="globalZoomModalCaption" style="flex:1;">Evidence image</strong>
 <button type="button" class="btn btn-secondary" data-image-zoom="out" aria-label="Zoom out">−</button>
+<span id="globalZoomPosition" aria-live="polite"></span>
 <span id="globalZoomLevel" aria-live="polite">100%</span>
 <button type="button" class="btn btn-secondary" data-image-zoom="in" aria-label="Zoom in">+</button>
 <button type="button" class="btn btn-secondary" data-image-zoom="reset">Reset</button>
 <button type="button" class="btn btn-secondary" onclick="window.closeImageZoomModal()" aria-label="Close image viewer">× Close</button>
 </div>
-<div id="globalZoomViewport" style="flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;">
+<div id="globalZoomViewport" style="position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;">
+<button type="button" class="btn btn-secondary" id="globalZoomPrevious" data-image-nav="-1" aria-label="Previous image" style="position:absolute;left:8px;top:50%;z-index:2;font-size:28px;">❮</button>
+<button type="button" class="btn btn-secondary" id="globalZoomNext" data-image-nav="1" aria-label="Next image" style="position:absolute;right:8px;top:50%;z-index:2;font-size:28px;">❯</button>
 <img alt="Enlarged evidence" id="globalZoomModalImg" src="" draggable="false" style="max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;user-select:none;"/>
 </div>
-<p style="color:#cbd5e1;text-align:center;margin:0;">Scroll or use + / − to zoom · Drag to move · Esc to close</p>
+<p style="color:#cbd5e1;text-align:center;margin:0;">Scroll or use + / − to zoom · Drag to move · ← / → next or previous image · Esc to close</p>
 </div>
 </div>
 <!-- INTERACTIVE MAP LOCATION PICKER MODAL -->

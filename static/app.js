@@ -17076,6 +17076,7 @@ function escapeHtml(str) {
 window.escapeHtml = escapeHtml;
 (() => {
   let scale = 1, panX = 0, panY = 0, lastFocus = null, pointer = null;
+  let gallery = [], galleryIndex = 0;
   const get = id => document.getElementById(id);
   function paint() {
     const img = get('globalZoomModalImg');
@@ -17085,13 +17086,33 @@ window.escapeHtml = escapeHtml;
   }
   function reset() { scale = 1; panX = panY = 0; pointer = null; paint(); }
   function zoom(factor) { scale = Math.max(1, Math.min(8, scale * factor)); if (scale === 1) panX = panY = 0; paint(); }
-  window.openImageZoomModal = (src, caption) => {
+  function showGalleryImage() {
+    const item = gallery[galleryIndex];
+    if (!item) return;
+    const img = get('globalZoomModalImg');
+    img.src = item.src; img.alt = item.caption;
+    get('globalZoomModalCaption').textContent = item.caption;
+    const position = get('globalZoomPosition');
+    if (position) position.textContent = gallery.length > 1 ? (galleryIndex + 1) + ' / ' + gallery.length : '';
+    const previous = get('globalZoomPrevious'), next = get('globalZoomNext');
+    if (previous) previous.disabled = galleryIndex === 0;
+    if (next) next.disabled = galleryIndex >= gallery.length - 1;
+    reset();
+  }
+  function moveGallery(direction) {
+    galleryIndex = Math.max(0, Math.min(gallery.length - 1, galleryIndex + direction));
+    showGalleryImage();
+  }
+  window.openImageZoomModal = (src, caption, sourceImage) => {
     const modal = get('globalImageZoomModal'), img = get('globalZoomModalImg');
     if (!modal || !img || !src) return;
     lastFocus = document.activeElement;
-    img.src = src; img.alt = caption || 'Evidence image';
-    get('globalZoomModalCaption').textContent = caption || 'Evidence image';
-    reset(); modal.style.display = 'flex';
+    const scope = sourceImage?.closest('#captureDetailModal, #vtrTimeline, .vtr-card');
+    const photos = scope ? Array.from(scope.querySelectorAll('img')).filter(photo => photo.getAttribute('src') && photo.getClientRects().length) : [];
+    gallery = photos.map(photo => ({src:photo.currentSrc || photo.src, caption:photo.alt || 'Capture evidence'}));
+    galleryIndex = photos.indexOf(sourceImage);
+    if (galleryIndex < 0) {gallery = [{src, caption:caption || 'Evidence image'}]; galleryIndex = 0;}
+    showGalleryImage(); modal.style.display = 'flex';
     modal.querySelector('[aria-label="Close image viewer"]')?.focus();
   };
   window.closeImageZoomModal = event => {
@@ -17102,6 +17123,8 @@ window.escapeHtml = escapeHtml;
     if (lastFocus?.isConnected) lastFocus.focus();
   };
   document.addEventListener('click', event => {
+    const navigation = event.target.closest('[data-image-nav]');
+    if (navigation) {moveGallery(Number(navigation.dataset.imageNav)); return;}
     const action = event.target.closest('[data-image-zoom]');
     if (action) {
       if (action.dataset.imageZoom === 'reset') reset();
@@ -17111,7 +17134,7 @@ window.escapeHtml = escapeHtml;
     const img = event.target.closest('#captureDetailModal img');
     if (img && img.getAttribute('src')) {
       event.preventDefault(); event.stopPropagation();
-      window.openImageZoomModal(img.currentSrc || img.src, img.alt || 'Capture evidence');
+      window.openImageZoomModal(img.currentSrc || img.src, img.alt || 'Capture evidence', img);
     }
   });
   document.addEventListener('wheel', event => {
@@ -17123,7 +17146,7 @@ window.escapeHtml = escapeHtml;
   }, {passive: false, capture: true});
   document.addEventListener('pointerdown', event => {
     const viewport = event.target.closest('#globalZoomViewport');
-    if (!viewport || event.button !== 0) return;
+    if (!viewport || event.button !== 0 || event.target.closest('button')) return;
     pointer = {id:event.pointerId, x:event.clientX, y:event.clientY};
     viewport.setPointerCapture(event.pointerId);
   });
@@ -17137,6 +17160,7 @@ window.escapeHtml = escapeHtml;
   document.addEventListener('pointercancel', endDrag);
   document.addEventListener('keydown', event => {
     if (get('globalImageZoomModal')?.style.display !== 'flex') return;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {event.preventDefault(); moveGallery(event.key === 'ArrowLeft' ? -1 : 1);}
     if (event.key === 'Escape') {event.preventDefault(); window.closeImageZoomModal();}
     if (['+', '=', '-'].includes(event.key)) {event.preventDefault(); zoom(event.key === '-' ? .8 : 1.25);}
   });
