@@ -338,7 +338,8 @@ class ANPRPipeline:
         effective_plate_conf = 0.20 if is_photo else self.config.plate_conf
         from src.detection.plate_candidates import detect_plate_candidates
         plate_detections = detect_plate_candidates(
-            self.plate_detector, frame, vehicles_needing_plate, effective_plate_conf
+            self.plate_detector, frame, vehicles_needing_plate, effective_plate_conf,
+            retry_offset=(self.stats["total_frames_processed"] - 1) * 4
         )
 
         # Match plates to vehicles
@@ -391,6 +392,7 @@ class ANPRPipeline:
             v_crop = frame[vy1:vy2, vx1:vx2]
 
             candidate_reading = None
+            crop_quality_valid = False
             plate_info = vehicle_to_plate.get(tid)
             pbox = plate_info["bbox"] if plate_info else None
             if pbox is None:
@@ -436,6 +438,7 @@ class ANPRPipeline:
                         min_conf=effective_plate_conf
                     )
 
+                    crop_quality_valid = is_valid
                     if not is_valid:
                         self.stats["crops_rejected_quality"] += 1
                         # Strictly drop invalid / truncated / blurred crops.
@@ -553,6 +556,15 @@ class ANPRPipeline:
 
                 # Get vehicle record state
                 v_rec = self.track_merger.vehicles[vehicle_id]
+                # Keep a real detector crop even if OCR returns no usable text.
+                # Unreadable captures must not lose the plate evidence.
+                if crop_quality_valid and pbox is not None and candidate_reading is None:
+                    area = (pbox[2] - pbox[0]) * (pbox[3] - pbox[1])
+                    if v_rec.best_crop is None or area > v_rec.max_plate_area:
+                        v_rec.best_crop = p_crop.copy()
+                        v_rec.best_vehicle_crop = v_crop.copy()
+                        v_rec.best_annotated_frame = frame.copy()
+                        v_rec.max_plate_area = area
                 if candidate_reading is not None and v_rec.readings:
                     self.voting_engine.vote_on_vehicle(v_rec, is_single_image=is_photo)
                     # Check saturation: requires at least 2 readings evaluated, >= 95% conf, valid format

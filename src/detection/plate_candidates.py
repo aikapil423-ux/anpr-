@@ -1,5 +1,5 @@
 """Plate proposals shared by photos and live/video frames, including bus/bike crop retry."""
-def detect_plate_candidates(detector, frame, vehicles, confidence, max_roi_retries=4):
+def detect_plate_candidates(detector, frame, vehicles, confidence, max_roi_retries=4, retry_offset=0):
     boxes=[tuple(v['bbox']) for v in vehicles]
     detections=detector.detect_in_frame(frame,vehicle_boxes=boxes or None,conf_thresh=confidence)
     matched={tuple(p['vehicle_bbox']) for p in detections if p.get('vehicle_bbox')}
@@ -7,6 +7,9 @@ def detect_plate_candidates(detector, frame, vehicles, confidence, max_roi_retri
     missing=[v for v in vehicles if tuple(v['bbox']) not in matched]
     # Give two-wheelers and buses first access to bounded crop-level retries.
     missing.sort(key=lambda v: (not any(word in str(v.get('cls_name','')).lower().replace('_',' ') for word in ('motor','bike','bicycle','two wheeler','bus')), (v['bbox'][2]-v['bbox'][0])*(v['bbox'][3]-v['bbox'][1])))
+    if missing:
+        offset = retry_offset % len(missing)
+        missing = missing[offset:] + missing[:offset]
     for vehicle in missing[:max_roi_retries]:
         vx1,vy1,vx2,vy2=map(int,vehicle['bbox'])
         vw,vh=vx2-vx1,vy2-vy1

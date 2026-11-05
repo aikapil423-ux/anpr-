@@ -186,7 +186,7 @@ class PlateDetector:
             det_imgsz = 640
         else:
             # Scale inference up to 1280 (multiple of 32) so small bike plates have high pixel density
-            det_imgsz = max(640, min(1280, (max_dim // 32) * 32))
+            det_imgsz = max(960, min(1280, (max_dim // 32) * 32))
 
         effective_conf = conf_thresh if conf_thresh is not None else self.conf_thresh
         results = self.yolo_model(input_frame, conf=effective_conf, imgsz=det_imgsz, verbose=False)

@@ -10433,7 +10433,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span>${escapeHtml(v.location || 'CAM-01')}</span>
                         <span>&bull;</span>
                         <span>${timeStr}</span>
-                        ${plate.includes('UNREADABLE') ? '<span style="color:#92400e; font-size:0.875rem; font-weight:600;">&bull; Distant Crop</span>' : ''}
+                        ${plate.includes('UNREADABLE') ? '<span style="color:#92400e; font-size:0.875rem; font-weight:600;">&bull; Plate not read</span>' : ''}
                         ${isHit ? '<span style="color:#ef4444; font-weight:bold;">&bull; CASE ALERT</span>' : ''}
                     </div>
                 </div>
@@ -10441,7 +10441,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
   }
   function renderFreshVehicles(vehicles, mode = 'live') {
-    vehicles = (vehicles || []).filter(window.isVisibleVehicleDetection);
+    // A live capture remains useful evidence even when its plate was not read.
+    vehicles = (vehicles || []).filter(v => v && (mode === 'live' || window.isVisibleVehicleDetection(v)));
     window._freshVehiclesCache = window._freshVehiclesCache || new Map();
     if (Array.isArray(vehicles)) {
       vehicles.forEach(v => {
