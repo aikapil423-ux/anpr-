@@ -8,7 +8,7 @@ window.isVisibleVehicleDetection = function (vehicle) {
   if (raw === null || raw === undefined || raw === '') return false;
   let confidence = Number(raw);
   if (vehicle.confidence == null && vehicle.final_confidence != null && confidence <= 1) confidence *= 100;
-  return Number.isFinite(confidence) && confidence > 80;
+  return Number.isFinite(confidence) && confidence >= 80;
 };
 document.addEventListener('DOMContentLoaded', () => {
  let isFetchingUnifiedLiveFeed = false;
@@ -10302,7 +10302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isFetchingUnifiedLiveFeed) return;
     isFetchingUnifiedLiveFeed = true;
     try {
-      const res = await fetch('/api/unified/live-feed?source=live&limit=15');
+      const res = await fetch('/api/unified/live-feed?source=live&limit=100');
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success) return;
@@ -10340,7 +10340,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isFetchingUploadActivityFeed) return;
     isFetchingUploadActivityFeed = true;
     try {
-      const res = await fetch('/api/unified/live-feed?source=upload&limit=15');
+      const res = await fetch('/api/unified/live-feed?source=upload&limit=100');
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success) return;
@@ -10441,8 +10441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
   }
   function renderFreshVehicles(vehicles, mode = 'live') {
-    // A live capture remains useful evidence even when its plate was not read.
-    vehicles = (vehicles || []).filter(v => v && (mode === 'live' || window.isVisibleVehicleDetection(v)));
+    vehicles = (vehicles || []).filter(window.isVisibleVehicleDetection).slice(0, 15);
     window._freshVehiclesCache = window._freshVehiclesCache || new Map();
     if (Array.isArray(vehicles)) {
       vehicles.forEach(v => {
@@ -10452,7 +10451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const containerId = mode === 'upload' ? 'uploadFreshVehiclesContainer' : 'liveFreshVehiclesContainer';
     const countBadgeId = mode === 'upload' ? 'uploadVehiclesFreshCount' : 'liveVehiclesFreshCount';
     const mobBadgeId = mode === 'upload' ? 'mobUploadVehiclesCountBadge' : 'mobVehiclesCountBadge';
-    const emptyMsg = mode === 'upload' ? 'No uploaded vehicle captures yet. Upload photo or video above to analyze.' : 'No vehicle captures yet. Start stream or connect live camera.';
+    const emptyMsg = mode === 'upload' ? 'No uploaded vehicle captures yet. Upload photo or video above to analyze.' : 'No readable live captures with OCR confidence of 80% or higher yet.';
     const container = document.getElementById(containerId);
     if (!container) return;
     const countBadge = document.getElementById(countBadgeId);
