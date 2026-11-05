@@ -6,7 +6,17 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<
 let rows=[], busy=false, filter='all', query='', selectedPlate=null, map=null, layers=[], routeVersion=0, lastRouteSignature='', lastListSignature='';
 const matched = row => ['EXACT','SAME'].includes(row.status);
 const status = row => ({EXACT:'Exact match · Auto added',PENDING:'Near match · Review needed',SAME:'Same · Confirmed',NOT_SAME:'Not Same · Normal detection',NORMAL:'Normal detection'}[row.status]||row.status);
-const image = (url,label) => url ? `<img class="vtr-photo" src="${esc(url)}" alt="${esc(label)}" loading="lazy">` : '<div class="vtr-no-photo">Photo unavailable</div>';
+const image = (url,label) => url ? `<img class="vtr-photo" src="${esc(url)}" alt="${esc(label)}" loading="lazy" role="button" tabindex="0" title="Click to enlarge image" aria-label="Enlarge ${esc(label)}">` : '<div class="vtr-no-photo">Photo unavailable</div>';
+// Delegate so polling can replace review cards without losing zoom actions.
+function enlargeReviewPhoto(event){
+ const photo=event.target.closest?.('img.vtr-photo');
+ if(!photo)return;
+ if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;
+ event.preventDefault();
+ window.openImageZoomModal?.(photo.currentSrc||photo.src,photo.alt);
+}
+document.addEventListener('click',enlargeReviewPhoto);
+document.addEventListener('keydown',enlargeReviewPhoto);
 function render(){
  const host=document.getElementById('vtrList');if(!host)return;
  const pending=rows.filter(r=>r.status==='PENDING');

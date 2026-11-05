@@ -5333,9 +5333,9 @@
 </div>
 <!-- Leaflet JS Engine for Police Route Mapping -->
 <script src="/static/vendor/leaflet/leaflet.js"></script>
-<script>window.KARNAL_CAMERA_MODE = true;</script><script src="/static/app.js?v=trail-review-2"></script><script src="/static/camera-registry.js?v=anpr-colours-1"></script>
+<script>window.KARNAL_CAMERA_MODE = true;</script><script src="/static/app.js?v=image-wheel-zoom-1"></script><script src="/static/camera-registry.js?v=anpr-colours-1"></script>
 <script src="/static/simple-ui.js?v=3"></script>
-<script src="/static/vehicle-trail-review.js?v=3"></script>
+<script src="/static/vehicle-trail-review.js?v=image-zoom-4"></script>
 <script>
 
 
@@ -6095,11 +6095,20 @@
 </div>
 </div>
 </div>
-<div class="modal-backdrop" id="globalImageZoomModal" onclick="window.closeImageZoomModal(event)" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(12px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
-<div onclick="event.stopPropagation()" style="position: relative; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center;">
-<button onclick="window.closeImageZoomModal()" style="position: absolute; top: -42px; right: -8px; background: rgba(241,245,249,0.9); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);" type="button">×</button>
-<img alt="Enlarged Target View" id="globalZoomModalImg" src="" style="max-width: 85vw; max-height: 80vh; object-fit: contain; border-radius: 10px; border: 2px solid rgba(99, 102, 241, 0.6); box-shadow: 0 0 40px rgba(0,0,0,0.95); background: #000;"/>
-<div id="globalZoomModalCaption" style="margin-top: 12px; font-size: 0.9425rem; font-weight: 700; color: #1e293b; text-align: center; background: rgba(241,245,249,0.88); padding: 6px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 4px 14px rgba(0,0,0,0.6);"></div>
+<div class="modal-backdrop" id="globalImageZoomModal" role="dialog" aria-modal="true" aria-label="Evidence image viewer" onclick="if(event.target===this)window.closeImageZoomModal(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:100000;align-items:center;justify-content:center;padding:16px;">
+<div style="width:95vw;height:92vh;display:flex;flex-direction:column;gap:12px;">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:white;">
+<strong id="globalZoomModalCaption" style="flex:1;">Evidence image</strong>
+<button type="button" class="btn btn-secondary" data-image-zoom="out" aria-label="Zoom out">−</button>
+<span id="globalZoomLevel" aria-live="polite">100%</span>
+<button type="button" class="btn btn-secondary" data-image-zoom="in" aria-label="Zoom in">+</button>
+<button type="button" class="btn btn-secondary" data-image-zoom="reset">Reset</button>
+<button type="button" class="btn btn-secondary" onclick="window.closeImageZoomModal()" aria-label="Close image viewer">× Close</button>
+</div>
+<div id="globalZoomViewport" style="flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;">
+<img alt="Enlarged evidence" id="globalZoomModalImg" src="" draggable="false" style="max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;user-select:none;"/>
+</div>
+<p style="color:#cbd5e1;text-align:center;margin:0;">Scroll or use + / − to zoom · Drag to move · Esc to close</p>
 </div>
 </div>
 <!-- INTERACTIVE MAP LOCATION PICKER MODAL -->

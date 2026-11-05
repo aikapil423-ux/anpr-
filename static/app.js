@@ -17074,20 +17074,73 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 window.escapeHtml = escapeHtml;
-window.openImageZoomModal = (imgSrc, caption) => {
-  const modal = document.getElementById('globalImageZoomModal');
-  const img = document.getElementById('globalZoomModalImg');
-  const cap = document.getElementById('globalZoomModalCaption');
-  if (!modal || !img) return;
-  img.src = imgSrc || '/static/icons/default-avatar.png';
-  if (cap) cap.innerText = caption || 'High-Resolution Target View';
-  modal.style.display = 'flex';
-};
-window.closeImageZoomModal = e => {
-  if (e && e.stopPropagation) e.stopPropagation();
-  const modal = document.getElementById('globalImageZoomModal');
-  if (modal) modal.style.display = 'none';
-};
+(() => {
+  let scale = 1, panX = 0, panY = 0, lastFocus = null, pointer = null;
+  const get = id => document.getElementById(id);
+  function paint() {
+    const img = get('globalZoomModalImg');
+    if (img) img.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    const label = get('globalZoomLevel');
+    if (label) label.textContent = `${Math.round(scale * 100)}%`;
+  }
+  function reset() { scale = 1; panX = panY = 0; pointer = null; paint(); }
+  function zoom(factor) { scale = Math.max(1, Math.min(8, scale * factor)); if (scale === 1) panX = panY = 0; paint(); }
+  window.openImageZoomModal = (src, caption) => {
+    const modal = get('globalImageZoomModal'), img = get('globalZoomModalImg');
+    if (!modal || !img || !src) return;
+    lastFocus = document.activeElement;
+    img.src = src; img.alt = caption || 'Evidence image';
+    get('globalZoomModalCaption').textContent = caption || 'Evidence image';
+    reset(); modal.style.display = 'flex';
+    modal.querySelector('[aria-label="Close image viewer"]')?.focus();
+  };
+  window.closeImageZoomModal = event => {
+    event?.stopPropagation();
+    const modal = get('globalImageZoomModal');
+    if (modal) modal.style.display = 'none';
+    pointer = null;
+    if (lastFocus?.isConnected) lastFocus.focus();
+  };
+  document.addEventListener('click', event => {
+    const action = event.target.closest('[data-image-zoom]');
+    if (action) {
+      if (action.dataset.imageZoom === 'reset') reset();
+      else zoom(action.dataset.imageZoom === 'in' ? 1.25 : .8);
+      return;
+    }
+    const img = event.target.closest('#captureDetailModal img');
+    if (img && img.getAttribute('src')) {
+      event.preventDefault(); event.stopPropagation();
+      window.openImageZoomModal(img.currentSrc || img.src, img.alt || 'Capture evidence');
+    }
+  });
+  document.addEventListener('wheel', event => {
+    const modal = get('globalImageZoomModal');
+    if (!modal || modal.style.display !== 'flex' || !modal.contains(event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.deltaY) zoom(event.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }, {passive: false, capture: true});
+  document.addEventListener('pointerdown', event => {
+    const viewport = event.target.closest('#globalZoomViewport');
+    if (!viewport || event.button !== 0) return;
+    pointer = {id:event.pointerId, x:event.clientX, y:event.clientY};
+    viewport.setPointerCapture(event.pointerId);
+  });
+  document.addEventListener('pointermove', event => {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    panX += event.clientX - pointer.x; panY += event.clientY - pointer.y;
+    pointer.x = event.clientX; pointer.y = event.clientY; paint();
+  });
+  const endDrag = () => {pointer = null;};
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+  document.addEventListener('keydown', event => {
+    if (get('globalImageZoomModal')?.style.display !== 'flex') return;
+    if (event.key === 'Escape') {event.preventDefault(); window.closeImageZoomModal();}
+    if (['+', '=', '-'].includes(event.key)) {event.preventDefault(); zoom(event.key === '-' ? .8 : 1.25);}
+  });
+})();
 window.ALL_MV_SECTIONS = [{
   code: "Sec 129 r/w 194D",
   title: "Riding Without Helmet / Headgear",
