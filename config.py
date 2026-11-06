@@ -125,6 +125,7 @@ class IdentityMergerConfig:
 
 @dataclass
 class TemporalVotingConfig:
+    require_exact_frame_consensus: bool = False
     min_supporting_frames: int = 1        # Select best reading even from 1-2 frames up to 5
     min_ocr_frames_per_vehicle: int = 2   # Minimum frames to evaluate for OCR per vehicle
     max_ocr_frames_per_vehicle: int = 5   # Maximum frames sent to OCR per vehicle (highest detector conf)

@@ -5,6 +5,7 @@ Generates MJPEG multipart streaming responses for web display.
 Supports on-the-fly toggling of the AI ANPR Pipeline (Raw mode vs Full ANPR mode)
 without modifying the core recognition pipeline.
 """
+from copy import deepcopy
 from typing import Optional, Union, Dict, Any, Generator, List
 import threading
 import collections
@@ -83,8 +84,9 @@ class CameraStreamManager:
 
     def _get_pipeline(self) -> ANPRPipeline:
         if self._pipeline is None:
-            config = self.config or ANPRConfig()
+            config = deepcopy(self.config)
             config.voting.min_supporting_frames = 2
+            config.voting.require_exact_frame_consensus = True
             self._pipeline = ANPRPipeline(config=config, async_ocr=False)
             self._pipeline.on_verified_sighting = self._handle_verified_plate_sighting
             self._pipeline.init_models()
@@ -134,7 +136,7 @@ class CameraStreamManager:
         self.camera_id = camera_id
         self.location = location
         self.gps_coords = gps_coords.strip() if gps_coords and gps_coords.strip() else None
-        self.passage_session_id = f'stream_{camera_id}_{int(time.time())}'
+        self.passage_session_id = f'stream_{camera_id}_{time.time_ns()}'
         self.logged_sightings_in_passage.clear()
         self.passage_captures.clear()
         self.passage_confidences.clear()
@@ -280,7 +282,10 @@ class CameraStreamManager:
             disp_plate = v_rec.display_plate or (self._pipeline.normalizer.format_display(norm_plate) if self._pipeline and getattr(self._pipeline, 'normalizer', None) else norm_plate)
             final_conf_pct = round(float(getattr(v_rec, 'final_confidence', 0.0)) * 100, 1)
             is_valid = bool(getattr(v_rec, 'is_verified', False))
-            db_match, match_type = self.vehicle_db.match_plate_with_type(norm_plate) if self.vehicle_db and norm_plate else (None, 'NONE')
+            is_file = getattr(self, '_is_file_source', False)
+            if not is_valid and not is_file:
+                return
+            db_match, match_type = self.vehicle_db.match_plate_with_type(norm_plate) if self.vehicle_db and is_valid else (None, 'NONE')
             hotlist_str = None
             if match_type == 'EXACT':
                 v_rec.alert_state = 'HOTLIST'
@@ -339,13 +344,14 @@ class CameraStreamManager:
             best_r = getattr(v_rec, 'best_reading', None)
             if best_r is None and getattr(v_rec, 'readings', None):
                 best_r = max(v_rec.readings, key=lambda r: (r.ocr_confidence, getattr(r, 'blur_score', 0.0)))
+            format_type = getattr(v_rec, 'format_type', None) or (best_r.format_type if best_r else 'standard')
             evidence_list = []
             for ef in getattr(v_rec, 'evidence_frames', []):
                 b64_crop = ''
                 if getattr(ef, 'crop_image', None) is not None and ef.crop_image.size > 0:
-                    ok, buf = cv2.imencode('.jpg', ef.crop_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                    ok, buf = cv2.imencode('.png', ef.crop_image)
                     if ok:
-                        b64_crop = base64.b64encode(buf).decode('utf-8')
+                        b64_crop = 'data:image/png;base64,' + base64.b64encode(buf).decode('utf-8')
                 evidence_list.append({'frame_idx': ef.frame_idx, 'track_id': ef.track_id, 'text': ef.text, 'confidence': round(float(ef.confidence) * 100, 1), 'crop_base64': b64_crop})
             if self.captured_db:
                 with self._lock:
@@ -354,17 +360,17 @@ class CameraStreamManager:
                     prev_conf = self.passage_confidences.get(passage_key, 0.0)
                 if is_existing and existing_cid:
                     if final_conf_pct > prev_conf:
-                        self.captured_db.update_capture(capture_id=existing_cid, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, display_plate=disp_plate, plate_number=norm_plate, is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', evidence_data=evidence_list, quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Verified Apex', track_id=getattr(best_r, 'track_id', None) or (list(v_rec.linked_track_ids)[0] if getattr(v_rec, 'linked_track_ids', None) else None), vehicle_id=getattr(v_rec, 'vehicle_id', None))
+                        self.captured_db.update_capture(capture_id=existing_cid, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, display_plate=disp_plate, plate_number=norm_plate, is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', evidence_data=evidence_list, quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Verified' if is_valid else f'OCR consensus review: {v_rec.review_reason}', track_id=getattr(best_r, 'track_id', None) or (list(v_rec.linked_track_ids)[0] if getattr(v_rec, 'linked_track_ids', None) else None), vehicle_id=getattr(v_rec, 'vehicle_id', None), format_type=format_type, update_timestamp=not is_file)
                         with self._lock:
                             self.passage_confidences[passage_key] = final_conf_pct
                 else:
-                    new_cid = self.captured_db.add_capture(plate_number=norm_plate, display_plate=disp_plate, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, aspect_ratio=round(float(getattr(best_r, 'aspect_ratio', 0.0)), 2) if best_r else 0.0, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, format_type=getattr(v_rec, 'format_type', None) or (best_r.format_type if best_r else 'standard'), quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Verified' if is_valid else 'Needs Review', evidence_data=evidence_list, is_fallback=final_conf_pct < 60.0, track_id=getattr(best_r, 'track_id', None) or (list(v_rec.linked_track_ids)[0] if getattr(v_rec, 'linked_track_ids', None) else None), vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
+                    new_cid = self.captured_db.add_capture(plate_number=norm_plate, display_plate=disp_plate, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, aspect_ratio=round(float(getattr(best_r, 'aspect_ratio', 0.0)), 2) if best_r else 0.0, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, format_type=format_type, quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Verified' if is_valid else f'OCR consensus review: {v_rec.review_reason}', evidence_data=evidence_list, is_fallback=final_conf_pct < 60.0, track_id=getattr(best_r, 'track_id', None) or (list(v_rec.linked_track_ids)[0] if getattr(v_rec, 'linked_track_ids', None) else None), vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'), cooldown_seconds=0.0 if is_file else 20.0)
                     if new_cid and new_cid > 0:
                         with self._lock:
                             self.passage_captures[passage_key] = new_cid
                             self.passage_confidences[passage_key] = final_conf_pct
                             self.logged_sightings_in_passage.add(passage_key)
-                        print(f'[CameraStreamManager {self.camera_id}] Live verified plate logged to CapturedDB: #{new_cid} | Plate: {norm_plate} ({final_conf_pct}%)')
+                        print(f'[CameraStreamManager {self.camera_id}] Plate logged to CapturedDB: #{new_cid} | Plate: {norm_plate} ({final_conf_pct}%)')
             if match_type == 'EXACT' and db_match and self.trail_db:
                 trail_key = f'trail_{passage_key}'
                 already_trailed = False
@@ -641,6 +647,7 @@ class CameraStreamManager:
         self.source_fps = file_fps
         target_interval = 1.0 / file_fps
         frame_idx = 0
+        file_frame_idx = 0
         fps_timer = time.time()
         fps_frame_count = 0
         while not self._stop_event.is_set():
@@ -658,17 +665,19 @@ class CameraStreamManager:
                         cap = self._create_capture()
                         time.sleep(0.01)
                         continue
+                    if self._pipeline and self._pipeline.defer_plate_ocr:
+                        self._pipeline.finish_ranked_plate_crops()
                     with self._lock:
-                        self.passage_session_id = f'stream_{self.camera_id}_{int(time.time())}'
+                        self.passage_session_id = f'stream_{self.camera_id}_{time.time_ns()}'
                         self.passage_captures.clear()
                         self.passage_confidences.clear()
                         self.logged_sightings_in_passage.clear()
                         self._track_velocities.clear()
+                        self._cached_displays = []
+                        self._cached_persons = []
+                    file_frame_idx = 0
                     if self._pipeline:
-                        try:
-                            self._pipeline.track_merger.reset()
-                        except Exception:
-                            pass
+                        self._pipeline.reset_state()
                 else:
                     now_t = time.time()
                     if now_t - self.last_successful_frame_time > 2.5:
@@ -709,13 +718,20 @@ class CameraStreamManager:
                 self.current_fps = fps_frame_count / elapsed
                 fps_frame_count = 0
                 fps_timer = time.time()
-            should_analyze = self.anpr_enabled and frame_idx % self.target_frame_interval == 0
-            if should_analyze:
-                if not self._ai_busy:
-                    self._latest_ai_frame = frame.copy()
-                    self._latest_ai_frame_idx = frame_idx
-                    self._ai_busy = True
-                    self._ai_trigger_event.set()
+            file_frame_idx += 1
+            sample_idx = file_frame_idx if is_file else frame_idx
+            should_analyze = self.anpr_enabled and sample_idx % self.target_frame_interval == 0
+            if should_analyze and not self._ai_busy:
+                self._latest_ai_frame = frame.copy()
+                self._latest_ai_frame_idx = sample_idx
+                self._ai_busy = True
+                self._ai_trigger_event.set()
+                if is_file:
+                    # Complete each selected file frame before playback advances or rewinds.
+                    while self._ai_busy and not self._stop_event.wait(0.01):
+                        pass
+                    if self._stop_event.is_set():
+                        break
             display_frame = self._render_hud_overlay(frame) if self.anpr_enabled else frame.copy()
             now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cv2.putText(display_frame, f'REC [LIVE]  {now_str}', (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
@@ -754,8 +770,13 @@ class CameraStreamManager:
                 if self.anpr_enabled:
                     try:
                         pipeline = self._get_pipeline()
-                        timestamp = frame_idx / 30.0
+                        is_file = getattr(self, '_is_file_source', False)
+                        pipeline.defer_plate_ocr = is_file
+                        source_fps = self.source_fps if is_file else 30.0
+                        timestamp = frame_idx / source_fps
                         raw_displays = pipeline.process_frame(ai_frame, frame_idx=frame_idx, timestamp=timestamp)
+                        if is_file:
+                            pipeline.finish_ranked_plate_crops(frame_idx, timestamp)
                         if hasattr(pipeline, 'vehicle_detector'):
                             vd = pipeline.vehicle_detector
                             new_persons = list(getattr(vd, 'last_persons', []))
@@ -803,120 +824,12 @@ class CameraStreamManager:
                             v_rec = pipeline.track_merger.vehicles.get(ad.get('vehicle_id')) if 'vehicle_id' in ad else None
                             if v_rec:
                                 v_rec.live_observation_count = getattr(v_rec, 'live_observation_count', 0) + 1
-                            reading = v_rec.readings[-1] if v_rec and v_rec.readings else None
-                            if v_rec and v_rec.final_plate or (reading and reading.ocr_confidence >= 0.4):
-                                norm_plate = v_rec.final_plate if v_rec and v_rec.final_plate else reading.normalized_text if reading and reading.normalized_text and (reading.normalized_text != 'UNREADABLE') else ''
-                                disp_plate = v_rec.display_plate if v_rec and v_rec.display_plate else pipeline.normalizer.format_display(norm_plate) if norm_plate else ''
-                                final_conf_pct = round(float(v_rec.final_confidence) * 100, 1) if v_rec and v_rec.final_confidence else round(reading.ocr_confidence * 100, 1) if reading else 0.0
-                                is_valid = v_rec.is_verified if v_rec else reading.is_valid_format if reading else False
-                                ad['disp_plate'] = disp_plate
-                                ad['final_conf_pct'] = final_conf_pct
-                                ad['is_valid'] = is_valid
-                                db_match, match_type = self.vehicle_db.match_plate_with_type(norm_plate) if self.vehicle_db and norm_plate else (None, 'NONE')
-                                hotlist_str = None
-                                now_ai_t = time.time()
-                                if match_type == 'EXACT':
-                                    ad['alert_state'] = 'HOTLIST'
-                                    if v_rec:
-                                        v_rec.alert_state = 'HOTLIST'
-                                        v_rec.is_saturated = True
-                                    hotlist_str = f"POLICE CASE: {db_match.get('offence_type', 'Crime')} | FIR: {db_match.get('fir_number', 'N/A')}" if db_match.get('involved_in_case') else f"LOST VEHICLE: {db_match.get('lost_location', 'Unknown')}"
-                                    ad['alert_reason'] = hotlist_str
-                                    if v_rec:
-                                        v_rec.alert_reason = hotlist_str
-                                    last_alert_t = self.audit_alert_cooldown.get(norm_plate, 0.0)
-                                    if now_ai_t - last_alert_t > 30.0 and self.audit_db:
-                                        self.audit_alert_cooldown[norm_plate] = now_ai_t
-                                        try:
-                                            p_crop_b64 = None
-                                            if ai_frame is not None and getattr(ai_frame, 'size', 0) > 0 and pbox:
-                                                fh, fw = ai_frame.shape[:2]
-                                                c_img = ai_frame[max(0, pbox[1]):min(fh, pbox[3]), max(0, pbox[0]):min(fw, pbox[2])]
-                                                if c_img.size > 0:
-                                                    _, buf = cv2.imencode('.jpg', c_img)
-                                                    p_crop_b64 = f"data:image/jpeg;base64,{base64.b64encode(buf).decode('utf-8')}"
-                                            self.audit_db.create_alert(alert_type='ANPR_HOTLIST', entity_identifier=norm_plate, display_name=disp_plate, case_info=hotlist_str, camera_id=self.camera_id, camera_location=self.location, origin_district=db_match.get('district_name') or 'All Haryana', origin_station=db_match.get('police_station') or 'PHQ', spotting_district=self.district, confidence=max(final_conf_pct, 85.0), snapshot_path=p_crop_b64)
-                                        except Exception as e:
-                                            print(f'[StreamManager] Alert error: {e}')
-                                elif match_type == 'NEAR_MATCH':
-                                    ad['alert_state'] = 'SUSPECT'
-                                    if v_rec:
-                                        v_rec.alert_state = 'SUSPECT'
-                                    suspect_str = f"SUSPECT NEAR-MATCH: {db_match.get('vehicle_number')} (Sim: {db_match.get('similarity', 0.85)})"
-                                    ad['alert_reason'] = suspect_str
-                                    if v_rec:
-                                        v_rec.alert_reason = suspect_str
-                                    last_alert_t = self.audit_alert_cooldown.get(norm_plate, 0.0)
-                                    if now_ai_t - last_alert_t > 30.0 and self.audit_db:
-                                        self.audit_alert_cooldown[norm_plate] = now_ai_t
-                                        try:
-                                            p_crop_b64 = None
-                                            if ai_frame is not None and getattr(ai_frame, 'size', 0) > 0 and pbox:
-                                                fh, fw = ai_frame.shape[:2]
-                                                c_img = ai_frame[max(0, pbox[1]):min(fh, pbox[3]), max(0, pbox[0]):min(fw, pbox[2])]
-                                                if c_img.size > 0:
-                                                    _, buf = cv2.imencode('.jpg', c_img)
-                                                    p_crop_b64 = f"data:image/jpeg;base64,{base64.b64encode(buf).decode('utf-8')}"
-                                            self.audit_db.create_alert(alert_type='ANPR_SUSPECT', entity_identifier=norm_plate, display_name=disp_plate, case_info=suspect_str, camera_id=self.camera_id, camera_location=self.location, origin_district=db_match.get('district_name') or 'All Haryana', origin_station=db_match.get('police_station') or 'PHQ', spotting_district=self.district, confidence=max(final_conf_pct, 75.0), snapshot_path=p_crop_b64)
-                                        except Exception as e:
-                                            print(f'[StreamManager] Alert error: {e}')
-                                else:
-                                    ad['alert_state'] = 'NORMAL'
-                                    if v_rec and v_rec.alert_state == 'SUSPECT':
-                                        v_rec.alert_state = 'NORMAL'
-                                        v_rec.alert_reason = ''
-                                is_readable_plate = bool(norm_plate and norm_plate != 'UNREADABLE' and (final_conf_pct >= 40.0))
-                                if v_rec and (is_readable_plate or v_rec.is_verified):
-                                    px1, py1, px2, py2 = pbox if pbox is not None else (0, 0, frame_w, frame_h)
-                                    vx1, vy1, vx2, vy2 = ad.get('bbox', (0, 0, frame_w, frame_h))
-                                    passage_key = f'{self.passage_session_id}_{v_rec.vehicle_id}'
-                                    ad['passage_key'] = passage_key
-                                    ad['vehicle_id'] = getattr(v_rec, 'vehicle_id', None)
-                                    ad['plate_number'] = norm_plate
-                                    p_crop = getattr(v_rec, 'best_crop', None)
-                                    if (p_crop is None or getattr(p_crop, 'size', 0) == 0) and pbox is not None:
-                                        p_crop = ai_frame[max(0, py1):min(frame_h, py2), max(0, px1):min(frame_w, px2)]
-                                    v_crop = getattr(v_rec, 'best_vehicle_crop', None)
-                                    if v_crop is None or getattr(v_crop, 'size', 0) == 0:
-                                        v_crop = ai_frame[max(0, vy1):min(frame_h, vy2), max(0, vx1):min(frame_w, vx2)]
-                                    scene_evidence = getattr(v_rec, 'best_annotated_frame', None)
-                                    if scene_evidence is None or getattr(scene_evidence, 'size', 0) == 0:
-                                        scene_evidence = ai_frame
-                                    best_r = getattr(v_rec, 'best_reading', None)
-                                    if best_r is None and v_rec and v_rec.readings:
-                                        best_r = max(v_rec.readings, key=lambda r: (r.ocr_confidence, getattr(r, 'blur_score', 0.0)))
-                                    if best_r is None:
-                                        best_r = reading
-                                    evidence_list = []
-                                    for ef in getattr(v_rec, 'evidence_frames', []):
-                                        b64_crop = ''
-                                        if getattr(ef, 'crop_image', None) is not None and ef.crop_image.size > 0:
-                                            ok, buf = cv2.imencode('.jpg', ef.crop_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
-                                            if ok:
-                                                b64_crop = base64.b64encode(buf).decode('utf-8')
-                                        evidence_list.append({'frame_idx': ef.frame_idx, 'track_id': ef.track_id, 'text': ef.text, 'confidence': round(float(ef.confidence) * 100, 1), 'crop_base64': b64_crop})
-                                    if self.captured_db:
-                                        with self._lock:
-                                            is_existing = passage_key in self.passage_captures
-                                            existing_cid = self.passage_captures.get(passage_key)
-                                            prev_conf = self.passage_confidences.get(passage_key, 0.0)
-                                        if is_existing and existing_cid:
-                                            if final_conf_pct > prev_conf:
-                                                self.captured_db.update_capture(capture_id=existing_cid, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, display_plate=disp_plate, plate_number=norm_plate, is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', evidence_data=evidence_list, quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Apex Update', track_id=getattr(best_r, 'track_id', tid), vehicle_id=getattr(v_rec, 'vehicle_id', None))
-                                                with self._lock:
-                                                    self.passage_confidences[passage_key] = final_conf_pct
-                                        else:
-                                            new_cid = self.captured_db.add_capture(plate_number=norm_plate, display_plate=disp_plate, confidence=final_conf_pct, plate_img=p_crop, vehicle_img=v_crop, annotated_img=scene_evidence, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=match_type == 'EXACT', hotlist_info=hotlist_str or '', blur_score=round(float(best_r.blur_score or 0.0), 1) if best_r else 0.0, aspect_ratio=round(float(getattr(best_r, 'aspect_ratio', 0.0)), 2) if best_r else 0.0, det_confidence=round(float(best_r.detection_confidence or 0.0) * 100, 1) if best_r else 0.0, ocr_confidence=round(float(best_r.ocr_confidence or 0.0) * 100, 1) if best_r else 0.0, format_type=getattr(v_rec, 'format_type', None) or (best_r.format_type if best_r else 'standard'), quality_gate_passed=is_valid, quality_reason='Live Camera Ingestion Verified' if is_valid else 'Needs Review (Format/Confidence)', evidence_data=evidence_list, is_fallback=final_conf_pct < 60.0, track_id=getattr(best_r, 'track_id', tid), vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
-                                            if new_cid and new_cid > 0:
-                                                with self._lock:
-                                                    self.passage_captures[passage_key] = new_cid
-                                                    self.passage_confidences[passage_key] = final_conf_pct
-                                                    self.logged_sightings_in_passage.add(passage_key)
-                                    if match_type == 'EXACT' and db_match and self.trail_db:
-                                        trail_key = f'trail_{passage_key}'
-                                        if trail_key not in self.logged_sightings_in_passage:
-                                            self.logged_sightings_in_passage.add(trail_key)
-                                            self.trail_db.record_sighting(vehicle_id=db_match['id'], registration_number=norm_plate, camera_id=self.camera_id, location=self.location, gps_coords=self.gps_coords, captured_at=datetime.datetime.now().astimezone().isoformat(), confidence=round(float(v_rec.final_confidence) * 100, 1), plate_img=p_crop, vehicle_img=v_crop, passage_id=passage_key, min_cooldown_seconds=4.0, district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
+                            if v_rec and v_rec.final_plate:
+                                ad['disp_plate'] = v_rec.display_plate
+                                ad['final_conf_pct'] = round(v_rec.final_confidence * 100, 1)
+                                ad['is_valid'] = v_rec.is_verified
+                                ad['passage_key'] = f'{self.passage_session_id}_{v_rec.vehicle_id}'
+                                ad['plate_number'] = v_rec.final_plate
                             if v_rec and getattr(v_rec, 'live_observation_count', 0) >= 3 and (not getattr(v_rec, 'logged_fallback', False)) and not v_rec.final_plate:
                                 passage_key = f'{self.passage_session_id}_{v_rec.vehicle_id}'
                                 ad['passage_key'] = passage_key
@@ -927,7 +840,7 @@ class CameraStreamManager:
                                 if v_crop is None or getattr(v_crop, 'size', 0) == 0:
                                     v_crop = ai_frame[max(0, vy1):min(frame_h, vy2), max(0, vx1):min(frame_w, vx2)]
                                 if self.captured_db and v_crop is not None and (getattr(v_crop, 'size', 0) > 0):
-                                    fb_cid = self.captured_db.add_capture(plate_number='UNREADABLE', display_plate='UNREADABLE', confidence=0.0, plate_img=getattr(v_rec, 'best_crop', None), vehicle_img=v_crop, annotated_img=ai_frame, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=False, format_type='unreadable', quality_gate_passed=False, quality_reason='Live Stream Unreadable Vehicle', is_fallback=True, track_id=tid, vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'))
+                                    fb_cid = self.captured_db.add_capture(plate_number='UNREADABLE', display_plate='UNREADABLE', confidence=0.0, plate_img=getattr(v_rec, 'best_crop', None), vehicle_img=v_crop, annotated_img=ai_frame, location=self.location, source_type=f'stream_{self.source_type}', is_hotlist_hit=False, format_type='unreadable', quality_gate_passed=False, quality_reason='Live Stream Unreadable Vehicle', is_fallback=True, track_id=tid, vehicle_id=getattr(v_rec, 'vehicle_id', None), district=getattr(self, 'district', 'Panipat'), operator_id=getattr(self, 'operator_id', None), operator_username=getattr(self, 'operator_username', 'op_5421'), station=getattr(self, 'station', 'PHQ'), cooldown_seconds=0.0 if is_file else 20.0)
                                     if fb_cid and fb_cid > 0:
                                         with self._lock:
                                             self.passage_captures[passage_key] = fb_cid

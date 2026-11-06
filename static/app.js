@@ -10,6 +10,8 @@ window.isVisibleVehicleDetection = function (vehicle) {
   if (vehicle.confidence == null && vehicle.final_confidence != null && confidence <= 1) confidence *= 100;
   return Number.isFinite(confidence) && confidence >= 80;
 };
+window.isOcrConsensusReview = vehicle => String(vehicle?.quality_reason || '').startsWith('OCR consensus review:');
+window.isVisibleCapturedVehicle = vehicle => window.isOcrConsensusReview(vehicle) || window.isVisibleVehicleDetection(vehicle);
 document.addEventListener('DOMContentLoaded', () => {
  let isFetchingUnifiedLiveFeed = false;
   const navDashboardBtn = document.getElementById('navDashboardBtn');
@@ -1872,7 +1874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     verifiedCardsContainer.innerHTML = vehicles.map((v, idx) => {
       const trackList = (v.linked_track_ids || []).map(id => `#${id}`).join(', ');
-      const cropSrc = v.best_crop_base64 ? `data:image/jpeg;base64,${v.best_crop_base64}` : '';
+      const cropSrc = v.best_crop_base64 ? window.formatEvidenceImageSrc(v.best_crop_base64) : '';
       const hotlistBanner = renderHotlistBannerHtml(v.hotlist_match);
       return `
 
@@ -2012,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     reviewCardsContainer.innerHTML = vehicles.map(v => {
       const trackList = (v.linked_track_ids || []).map(id => `#${id}`).join(', ');
-      const cropSrc = v.best_crop_base64 ? `data:image/jpeg;base64,${v.best_crop_base64}` : '';
+      const cropSrc = v.best_crop_base64 ? window.formatEvidenceImageSrc(v.best_crop_base64) : '';
       const hotlistBanner = renderHotlistBannerHtml(v.hotlist_match);
       return `
 
@@ -2162,7 +2164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                <img src="data:image/jpeg;base64,${ef.crop_base64}" alt="Frame Crop">
+                <img src="${window.formatEvidenceImageSrc(ef.crop_base64)}" alt="Frame Crop">
 
 
 
@@ -2243,7 +2245,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const res = await fetch(url);
       const data = await res.json();
-      const items = (data.captured || []).filter(window.isVisibleVehicleDetection);
+      const items = (data.captured || []).filter(window.isVisibleCapturedVehicle);
       if (capturedCountBadge) {
         capturedCountBadge.innerText = `${items.length} Captures · >80%`;
       }
@@ -2453,6 +2455,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                                 ${hotlistTag}
+                                ${window.isOcrConsensusReview(c) ? '<span class="badge-warning">Needs review</span>' : ''}
 
 
 
@@ -3053,7 +3056,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                                        ${ef.crop_base64 ? `<img src="data:image/jpeg;base64,${ef.crop_base64}" alt="Frame ${ef.frame_idx}" style="max-height: 100%; max-width: 100%; object-fit: contain;">` : plateCropSrc ? `<img src="${plateCropSrc}" style="max-height:100%; object-fit:contain;">` : ''}
+                                        ${ef.crop_base64 ? `<img src="${window.formatEvidenceImageSrc(ef.crop_base64)}" alt="Frame ${ef.frame_idx}" style="max-height: 100%; max-width: 100%; object-fit: contain;">` : plateCropSrc ? `<img src="${plateCropSrc}" style="max-height:100%; object-fit:contain;">` : ''}
 
 
 
@@ -3886,7 +3889,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                                        ${ef.crop_base64 ? `<img src="data:image/jpeg;base64,${ef.crop_base64}" alt="Evidence Frame ${ef.frame_idx}" style="max-height: 100%; max-width: 100%; object-fit: contain;">` : '<span style="font-size:0.875rem; color:var(--text-muted);">No crop</span>'}
+                                        ${ef.crop_base64 ? `<img src="${window.formatEvidenceImageSrc(ef.crop_base64)}" alt="Evidence Frame ${ef.frame_idx}" style="max-height: 100%; max-width: 100%; object-fit: contain;">` : '<span style="font-size:0.875rem; color:var(--text-muted);">No crop</span>'}
 
 
 
@@ -10624,7 +10627,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                                    ${v.plate_crop_base64 ? `<img src="data:image/jpeg;base64,${v.plate_crop_base64}" style="height: 32px; border-radius: 4px; border: 1px solid var(--border-color); object-fit: contain;">` : ''}
+                                    ${v.plate_crop_base64 ? `<img src="${window.formatEvidenceImageSrc(v.plate_crop_base64)}" style="height: 32px; border-radius: 4px; border: 1px solid var(--border-color); object-fit: contain;">` : ''}
 
 
 
@@ -12165,7 +12168,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedOp && selectedOp !== 'ALL') url += `&operator=${encodeURIComponent(selectedOp)}`;
       const res = await fetch(url);
       const data = await res.json();
-      const items = (data.vehicles || []).filter(window.isVisibleVehicleDetection);
+      const items = (data.vehicles || []).filter(window.isVisibleCapturedVehicle);
       const totalCount = items.length;
       const navBadge = document.getElementById('navDrawerVehiclesCount');
       if (navBadge) navBadge.innerText = totalCount;
@@ -12245,7 +12248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-                                <span class="badge-verified" style="font-size: 0.875rem; margin-top: 2px;">Verified</span>
+                                ${window.isOcrConsensusReview(v) ? '<span class="badge-warning">Needs review</span>' : '<span class="badge-verified" style="font-size: 0.875rem; margin-top: 2px;">Verified</span>'}
 
 
 
@@ -14660,7 +14663,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (evFrames.length > 0) {
       framesThumbnailsHtml = evFrames.map((ef, fIdx) => {
         const isSelected = fIdx === currentSearchActiveFrameIndex;
-        const thumbImg = ef.crop_base64 ? `data:image/jpeg;base64,${ef.crop_base64}` : rawPlateImg;
+        const thumbImg = ef.crop_base64 ? `${window.formatEvidenceImageSrc(ef.crop_base64)}` : rawPlateImg;
         const fConf = ef.ocr_confidence !== undefined && ef.ocr_confidence > 0 ? ef.ocr_confidence : ef.confidence;
         const fConfStr = fConf ? `${Number(fConf).toFixed(1)}%` : 'N/A';
         const fBorder = isSelected ? 'border: 2px solid #0369a1; box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);' : 'border: 1px solid #334155; opacity: 0.85;';
@@ -15643,7 +15646,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const frameText = f.raw_text || f.text || record.plate_number || 'N/A';
     const rawTrack = f.track_id !== undefined && f.track_id !== null ? f.track_id : record.track_id;
     const frameTrackId = rawTrack !== null && rawTrack !== undefined ? String(rawTrack).startsWith('#') ? rawTrack : `#${rawTrack}` : 'N/A';
-    const plateCropSrc = f.crop_base64 ? `data:image/jpeg;base64,${f.crop_base64}` : record.plate_pic_path ? record.plate_pic_path.startsWith('/') ? record.plate_pic_path : '/' + record.plate_pic_path : '';
+    const plateCropSrc = f.crop_base64 ? window.formatEvidenceImageSrc(f.crop_base64) : record.plate_pic_path ? record.plate_pic_path.startsWith('/') ? record.plate_pic_path : '/' + record.plate_pic_path : '';
     const vehCropSrc = f.vehicle_crop_base64 ? `data:image/jpeg;base64,${f.vehicle_crop_base64}` : record.vehicle_pic_path ? record.vehicle_pic_path.startsWith('/') ? record.vehicle_pic_path : '/' + record.vehicle_pic_path : '';
     container.innerHTML = `
 
@@ -17959,7 +17962,8 @@ window.formatEvidenceImageSrc = function (src, fallback = '/static/benchmark_sam
   if (src.startsWith('data:image/') || src.startsWith('blob:') || src.startsWith('http://') || src.startsWith('https://')) {
     return src;
   }
-  if (src.startsWith('/9j/') || src.startsWith('9j/') || src.startsWith('iVBORw0KGgo') || !src.includes('/') && src.length > 50 || src.startsWith('/') && src.length > 250 && !src.includes(' ') && !src.includes('.')) {
+  if (src.startsWith('iVBORw0KGgo')) return `data:image/png;base64,${src}`;
+  if (src.startsWith('/9j/') || src.startsWith('9j/') || !src.includes('/') && src.length > 50 || src.startsWith('/') && src.length > 250 && !src.includes(' ') && !src.includes('.')) {
     return `data:image/jpeg;base64,${src}`;
   }
   if (src.startsWith('/')) {
@@ -18229,7 +18233,7 @@ window.renderRecentUploadResults = function (filterQuery = '') {
       const cleanPlate = v.plate_number || v.final_plate || plate;
       const conf = Math.round(v.confidence || v.ocr_confidence || 95.0);
       const isUnreadable = cleanPlate === 'UNREADABLE';
-      const cropImg = v.plate_crop_base64 ? `data:image/jpeg;base64,${v.plate_crop_base64}` : v.vehicle_crop_base64 ? `data:image/jpeg;base64,${v.vehicle_crop_base64}` : v.crop_base64 ? `data:image/jpeg;base64,${v.crop_base64}` : v.plate_crop_url || v.plate_pic_path || v.vehicle_pic_path || '/static/benchmark_sample.jpg';
+      const cropImg = v.plate_crop_base64 ? window.formatEvidenceImageSrc(v.plate_crop_base64) : v.vehicle_crop_base64 ? `data:image/jpeg;base64,${v.vehicle_crop_base64}` : v.crop_base64 ? `data:image/jpeg;base64,${v.crop_base64}` : v.plate_crop_url || v.plate_pic_path || v.vehicle_pic_path || '/static/benchmark_sample.jpg';
       let driverStripHtml = '';
       const hasDriver = Boolean(v.driver_name && v.driver_name.toUpperCase() !== 'UNKNOWN' || null || null || v.driver_captured_id || 0);
       if (hasDriver) {
@@ -18384,7 +18388,7 @@ window.renderTacticalRouteMap = async function (plateNumber, userIncludeUnreadab
           lng: parts[1],
           location: s.location || 'Checkpoint',
           time: s.captured_at || new Date().toISOString(),
-          crop: s.plate_crop_base64 ? `data:image/jpeg;base64,${s.plate_crop_base64}` : s.vehicle_crop_base64 ? `data:image/jpeg;base64,${s.vehicle_crop_base64}` : s.crop_base64 ? `data:image/jpeg;base64,${s.crop_base64}` : s.plate_pic_path || s.vehicle_pic_path || '',
+          crop: s.plate_crop_base64 ? window.formatEvidenceImageSrc(s.plate_crop_base64) : s.vehicle_crop_base64 ? `data:image/jpeg;base64,${s.vehicle_crop_base64}` : s.crop_base64 ? `data:image/jpeg;base64,${s.crop_base64}` : s.plate_pic_path || s.vehicle_pic_path || '',
           conf: Math.round(s.confidence || 95),
           isProvisional: false
         });
@@ -18743,7 +18747,7 @@ window.fetchAndRenderUploadSessionsFeed = async function () {
         const cleanPlate = v.plate_number || v.final_plate || plate;
         const isUnreadable = cleanPlate === 'UNREADABLE';
         const conf = Math.round(v.confidence || 90);
-        const plateCrop = v.plate_crop_base64 ? `data:image/jpeg;base64,${v.plate_crop_base64}` : v.plate_pic_path || '';
+        const plateCrop = v.plate_crop_base64 ? window.formatEvidenceImageSrc(v.plate_crop_base64) : v.plate_pic_path || '';
         const vehCrop = v.vehicle_crop_base64 ? `data:image/jpeg;base64,${v.vehicle_crop_base64}` : v.crop_base64 ? `data:image/jpeg;base64,${v.crop_base64}` : v.vehicle_pic_path || '';
         const cropImg = plateCrop || vehCrop || '/static/benchmark_sample.jpg';
         const fallbackCrop = plateCrop && vehCrop && plateCrop !== vehCrop ? vehCrop : '/static/benchmark_sample.jpg';

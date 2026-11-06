@@ -87,15 +87,22 @@ class TrailDB:
     def _save_photo(self, img_data: Optional[Union[np.ndarray, bytes]], prefix: str, plate_clean: str) -> Optional[str]:
         if img_data is None:
             return None
-
-        file_tag = f"{prefix}_{plate_clean}_{int(time.time())}_{uuid.uuid4().hex[:6]}.jpg"
+        is_plate = prefix == 'plate'
+        extension = 'png' if is_plate else 'jpg'
+        file_tag = f'{prefix}_{plate_clean}_{int(time.time())}_{uuid.uuid4().hex[:6]}.{extension}'
         abs_path = os.path.join(self.photos_dir, file_tag)
 
         try:
+            if is_plate and isinstance(img_data, bytes):
+                if not img_data:
+                    return None
+                img_data = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_UNCHANGED)
             if isinstance(img_data, np.ndarray):
                 if img_data.size == 0:
                     return None
-                cv2.imwrite(abs_path, img_data, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                options = [] if is_plate else [cv2.IMWRITE_JPEG_QUALITY, 90]
+                if not cv2.imwrite(abs_path, img_data, options):
+                    return None
             elif isinstance(img_data, bytes):
                 if len(img_data) == 0:
                     return None

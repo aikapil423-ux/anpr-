@@ -41,6 +41,7 @@ class AsyncOCRTask:
     pbox: List[int]
     cls_name: str
     frame_shape: Tuple[int, int]
+    original_crop: Optional[np.ndarray] = None
 
 class ANPRPipeline:
     def __init__(
@@ -73,6 +74,8 @@ class ANPRPipeline:
         self._ocr_thread: Optional[threading.Thread] = None
         self._ocr_stop_event = threading.Event()
         self.on_verified_sighting: Optional[Callable] = None
+        self.defer_plate_ocr = False
+        self._ranked_plate_crops = {}
 
         if not lazy_models:
             self.init_models()
@@ -210,7 +213,7 @@ class ANPRPipeline:
         for task, (raw_text, ocr_conf) in zip(tasks, results):
             self._apply_ocr_result(task, raw_text, ocr_conf)
 
-    def _apply_ocr_result(self, task: AsyncOCRTask, raw_text: str, ocr_conf: float):
+    def _apply_ocr_result(self, task: AsyncOCRTask, raw_text: str, ocr_conf: float, *, vehicle: Optional[VehicleRecord] = None):
         """Applies OCR recognition result to candidate reading and updates track identity."""
         vx1, vy1, vx2, vy2 = task.vbox
         frame_h, frame_w = task.frame_shape
@@ -264,7 +267,7 @@ class ANPRPipeline:
                 ocr_confidence=ocr_conf,
                 detection_confidence=task.plate_conf,
                 blur_score=task.blur_score,
-                crop_image=task.cleaned_crop,
+                crop_image=task.original_crop if task.original_crop is not None else task.cleaned_crop,
                 vehicle_bbox=task.vbox,
                 plate_bbox=task.pbox,
                 vehicle_crop=v_crop,
@@ -276,6 +279,10 @@ class ANPRPipeline:
                 self.stats["valid_ocr_readings"] += 1
         else:
             # Crop yielded no legible OCR text (< 20%): silently ignore so temporal voting is not polluted
+            return
+
+        if vehicle is not None:
+            vehicle.add_reading(candidate_reading)
             return
 
         with self._pipeline_lock:
@@ -392,6 +399,7 @@ class ANPRPipeline:
             v_crop = frame[vy1:vy2, vx1:vx2]
 
             candidate_reading = None
+            ranked_crop = None
             crop_quality_valid = False
             plate_info = vehicle_to_plate.get(tid)
             pbox = plate_info["bbox"] if plate_info else None
@@ -445,11 +453,19 @@ class ANPRPipeline:
                         # Do NOT register a false UNREADABLE reading; wait for vehicle to enter clear zone.
                         candidate_reading = None
                     else:
-                        if self.async_ocr and not sync and not is_photo:
+                        if self.defer_plate_ocr and not is_photo:
+                            ranked_crop = AsyncOCRTask(
+                                cleaned_crop=cleaned_crop, original_crop=p_crop.copy(), frame=frame,
+                                tid=tid, vehicle_id="", frame_idx=frame_idx, timestamp=timestamp,
+                                plate_conf=plate_info["conf"], blur_score=blur_score, vbox=vbox,
+                                pbox=pbox, cls_name=tv.get("cls_name", "vehicle"), frame_shape=(frame_h, frame_w)
+                            )
+                        elif self.async_ocr and not sync and not is_photo:
                             # 5A. Asynchronous Mode: Non-blocking Queue Dispatch
                             existing_vid = self.track_merger.track_to_vehicle.get(tid, f"veh_{tid}")
                             task = AsyncOCRTask(
                                 cleaned_crop=cleaned_crop,
+                                original_crop=p_crop.copy(),
                                 frame=frame.copy(),
                                 tid=tid,
                                 vehicle_id=existing_vid,
@@ -527,7 +543,7 @@ class ANPRPipeline:
                                     ocr_confidence=ocr_conf,
                                     detection_confidence=plate_info["conf"],
                                     blur_score=blur_score,
-                                    crop_image=cleaned_crop,
+                                    crop_image=p_crop.copy(),
                                     vehicle_bbox=vbox,
                                     plate_bbox=pbox,
                                     vehicle_crop=v_crop,
@@ -558,6 +574,8 @@ class ANPRPipeline:
                 v_rec = self.track_merger.vehicles[vehicle_id]
                 # Keep a real detector crop even if OCR returns no usable text.
                 # Unreadable captures must not lose the plate evidence.
+                if ranked_crop is not None:
+                    self._rank_plate_crop(vehicle_id, ranked_crop)
                 if crop_quality_valid and pbox is not None and candidate_reading is None:
                     area = (pbox[2] - pbox[0]) * (pbox[3] - pbox[1])
                     if v_rec.best_crop is None or area > v_rec.max_plate_area:
@@ -648,6 +666,37 @@ class ANPRPipeline:
 
         return active_display_list
 
+    def _rank_plate_crop(self, vehicle_id, task: AsyncOCRTask):
+        crops = self._ranked_plate_crops.setdefault(vehicle_id, [])
+        if any(candidate.frame_idx == task.frame_idx for _, candidate in crops):
+            return
+        height, width = task.original_crop.shape[:2]
+        score = task.plate_conf * np.sqrt(width * height) * np.log1p(task.blur_score)
+        crops.append((score, task))
+        crops.sort(key=lambda item: item[0], reverse=True)
+        del crops[3:]
+
+    def finish_ranked_plate_crops(self, frame_idx=None, timestamp=None):
+        """Resolve the best distinct frames once a passage can no longer be linked."""
+        for vehicle_id in list(self._ranked_plate_crops):
+            vehicle = self.track_merger.vehicles[vehicle_id]
+            if frame_idx is not None and (
+                vehicle.active or (
+                    frame_idx - vehicle.last_frame <= self.config.identity.max_track_gap_frames
+                    and timestamp - vehicle.last_timestamp <= self.config.identity.max_time_gap_seconds
+                )
+            ):
+                continue
+            crops = self._ranked_plate_crops.pop(vehicle_id)
+            for _, task in crops:
+                text, confidence = self.ocr_engine.read_text(task.cleaned_crop)
+                self._apply_ocr_result(task, text, confidence, vehicle=vehicle)
+            self.voting_engine.vote_on_vehicle(vehicle)
+            if self.on_verified_sighting and vehicle.status in ("VERIFIED", "NEEDS_REVIEW"):
+                best_frame_idx = getattr(vehicle.best_reading, "frame_idx", None)
+                best = next((task for _, task in crops if task.frame_idx == best_frame_idx), crops[0][1])
+                self.on_verified_sighting(vehicle, best.frame, best.pbox, best.vbox)
+
     def finalize(self, is_single_image: bool = False) -> Dict[str, Any]:
         """
         Finalizes video processing.
@@ -716,6 +765,8 @@ class ANPRPipeline:
             if hasattr(self.vehicle_detector, "reset"):
                 self.vehicle_detector.reset()
             self.track_merger.reset()
+            self._violation_cache.clear()
+            self._ranked_plate_crops.clear()
             self.stats = {
                 "total_frames_processed": 0,
                 "total_tracks_detected": 0,

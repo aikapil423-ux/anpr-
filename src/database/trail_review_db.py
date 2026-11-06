@@ -53,6 +53,8 @@ class TrailReviewDB:
         return f"{prefix}/trail_review_photos/{dest.name}"
 
     def observe(self, record):
+        if (record.get("quality_reason") or "").startswith("OCR consensus review:"):
+            return None
         plate = self.watchlist.normalizer.clean_raw_text(record.get("plate_number") or "")
         if not plate or plate in ("UNREADABLE", "UNKNOWN") or not (8 <= len(plate) <= 11):
             return None

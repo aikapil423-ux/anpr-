@@ -8,10 +8,12 @@ from config import ANPRConfig
 from src.pipeline.anpr_pipeline import ANPRPipeline
 from src.ocr.enhancer import PlateEnhancer
 
-def encode_img_base64(img: Optional[np.ndarray], quality: int=90) -> str:
+def encode_img_base64(img: Optional[np.ndarray], quality: int=90, *, lossless: bool=False) -> str:
     if img is None or img.size == 0:
         return ''
-    success, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, quality])
+    extension = '.png' if lossless else '.jpg'
+    options = [] if lossless else [cv2.IMWRITE_JPEG_QUALITY, quality]
+    success, buffer = cv2.imencode(extension, img, options)
     if not success:
         return ''
     return base64.b64encode(buffer).decode('utf-8')
@@ -119,7 +121,7 @@ class UnifiedPipeline:
                 elif isinstance(prep_meta, dict):
                     prep_meta = {k: v for k, v in prep_meta.items() if not isinstance(v, np.ndarray)}
                 is_valid = bool(getattr(v_rec, 'is_verified', False) if v_rec and hasattr(v_rec, 'is_verified') and (v_rec.final_plate != 'UNREADABLE') else ad.get('is_verified') or bool(norm_plate and norm_plate != 'UNREADABLE'))
-                vehicle_results.append({'vehicle_id': f"VEH-{ad['vehicle_id']}", 'track_id': f'V-{tid}', 'cls_name': cls_name, 'bbox': vbox, 'plate_bbox': pbox, 'final_plate': norm_plate, 'display_plate': disp_plate or norm_plate or 'UNREADABLE', 'confidence': conf_pct, 'is_verified': is_valid, 'plate_crop_base64': encode_img_base64(p_crop), 'vehicle_crop_base64': encode_img_base64(v_crop), 'enhanced_crop_base64': encode_img_base64(enh_crop), 'preprocessing_meta': prep_meta, 'is_traffic_violation': bool(ad.get('is_traffic_violation') or getattr(v_rec, 'is_traffic_violation', False)), 'violation_type': ad.get('violation_type') or getattr(v_rec, 'violation_type', None), 'violation_fine': ad.get('violation_fine') or getattr(v_rec, 'violation_fine', 0), 'violation_id': ad.get('violation_id') or getattr(v_rec, 'violation_id', None), 'violation_details': ad.get('violation_details') or getattr(v_rec, 'violation_details', None)})
+                vehicle_results.append({'vehicle_id': f"VEH-{ad['vehicle_id']}", 'track_id': f'V-{tid}', 'cls_name': cls_name, 'bbox': vbox, 'plate_bbox': pbox, 'final_plate': norm_plate, 'display_plate': disp_plate or norm_plate or 'UNREADABLE', 'confidence': conf_pct, 'is_verified': is_valid, 'plate_crop_base64': encode_img_base64(p_crop, lossless=True), 'vehicle_crop_base64': encode_img_base64(v_crop), 'enhanced_crop_base64': encode_img_base64(enh_crop), 'preprocessing_meta': prep_meta, 'is_traffic_violation': bool(ad.get('is_traffic_violation') or getattr(v_rec, 'is_traffic_violation', False)), 'violation_type': ad.get('violation_type') or getattr(v_rec, 'violation_type', None), 'violation_fine': ad.get('violation_fine') or getattr(v_rec, 'violation_fine', 0), 'violation_id': ad.get('violation_id') or getattr(v_rec, 'violation_id', None), 'violation_details': ad.get('violation_details') or getattr(v_rec, 'violation_details', None)})
         people_detections = []
         correlation = {'linked_pairs': [], 'spatial_overlap_threshold': 0.35, 'total_correlations': 0, 'summary': f'Single modality analysis ({target}) - spatial cross-modal linking bypassed.'}
         layers = {'vehicle_box': True, 'plate_box': True, 'ocr_text': True, 'person_box': False, 'people_counter': True}

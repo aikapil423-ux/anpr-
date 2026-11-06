@@ -72,13 +72,21 @@ class CapturedDB:
     def _save_crop_image(self, img_data: Optional[Union[np.ndarray, bytes]], prefix: str, plate_clean: str) -> Optional[str]:
         if img_data is None:
             return None
-        file_tag = f'{prefix}_{plate_clean}_{int(time.time())}_{uuid.uuid4().hex[:6]}.jpg'
+        is_plate = prefix == 'plate'
+        extension = 'png' if is_plate else 'jpg'
+        file_tag = f'{prefix}_{plate_clean}_{int(time.time())}_{uuid.uuid4().hex[:6]}.{extension}'
         abs_path = os.path.join(self.crops_dir, file_tag)
         try:
+            if is_plate and isinstance(img_data, bytes):
+                if not img_data:
+                    return None
+                img_data = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_UNCHANGED)
             if isinstance(img_data, np.ndarray):
                 if img_data.size == 0:
                     return None
-                cv2.imwrite(abs_path, img_data, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                options = [] if is_plate else [cv2.IMWRITE_JPEG_QUALITY, 90]
+                if not cv2.imwrite(abs_path, img_data, options):
+                    return None
             elif isinstance(img_data, bytes):
                 if len(img_data) == 0:
                     return None
@@ -213,7 +221,7 @@ class CapturedDB:
             conn.close()
     add_detection = add_capture
 
-    def update_capture(self, capture_id: int, confidence: Optional[float]=None, plate_img: Optional[Union[np.ndarray, bytes]]=None, vehicle_img: Optional[Union[np.ndarray, bytes]]=None, annotated_img: Optional[Union[np.ndarray, bytes]]=None, det_confidence: Optional[float]=None, ocr_confidence: Optional[float]=None, blur_score: Optional[float]=None, display_plate: Optional[str]=None, plate_number: Optional[str]=None, is_hotlist_hit: Optional[bool]=None, hotlist_info: Optional[str]=None, evidence_data: Optional[Union[str, List[Dict[str, Any]]]]=None, quality_gate_passed: Optional[bool]=None, quality_reason: Optional[str]=None, track_id: Optional[int]=None, vehicle_id: Optional[int]=None, linked_tracks: Optional[str]=None, update_timestamp: bool=True, evidence_video_path: Optional[str]=None, is_traffic_violation: Optional[bool]=None, violation_type: Optional[str]=None, violation_fine: Optional[int]=None, violation_details: Optional[str]=None, violation_id: Optional[str]=None) -> bool:
+    def update_capture(self, capture_id: int, confidence: Optional[float]=None, plate_img: Optional[Union[np.ndarray, bytes]]=None, vehicle_img: Optional[Union[np.ndarray, bytes]]=None, annotated_img: Optional[Union[np.ndarray, bytes]]=None, det_confidence: Optional[float]=None, ocr_confidence: Optional[float]=None, blur_score: Optional[float]=None, display_plate: Optional[str]=None, plate_number: Optional[str]=None, is_hotlist_hit: Optional[bool]=None, hotlist_info: Optional[str]=None, evidence_data: Optional[Union[str, List[Dict[str, Any]]]]=None, quality_gate_passed: Optional[bool]=None, quality_reason: Optional[str]=None, track_id: Optional[int]=None, vehicle_id: Optional[int]=None, linked_tracks: Optional[str]=None, update_timestamp: bool=True, evidence_video_path: Optional[str]=None, is_traffic_violation: Optional[bool]=None, violation_type: Optional[str]=None, violation_fine: Optional[int]=None, violation_details: Optional[str]=None, violation_id: Optional[str]=None, format_type: Optional[str]=None) -> bool:
         """
         Updates an existing capture entry in-place with sharper crops and peak metrics.
         Prevents duplicate rows while elevating evidence quality to apex levels.
@@ -257,6 +265,9 @@ class CapturedDB:
             if quality_gate_passed is not None:
                 updates.append('quality_gate_passed = ?')
                 params.append(1 if quality_gate_passed else 0)
+            if format_type is not None:
+                updates.append('format_type = ?')
+                params.append(format_type)
             if quality_reason is not None:
                 updates.append('quality_reason = ?')
                 params.append(quality_reason)

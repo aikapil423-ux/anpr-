@@ -162,17 +162,39 @@ class TemporalVotingEngine:
             is_valid_plate, fmt_type, norm_plate = self.normalizer.validate(raw_best)
             best_plate = norm_plate
 
-        # Readings supporting best_plate (Levenshtein similarity >= 0.80 or exact match)
-        supporting_readings = [
-            r for r in valid_readings
-            if self.normalizer.calculate_levenshtein(self.normalizer.validate(r.normalized_text)[2], best_plate) >= 0.80
-        ]
-        supporting_count = max(1, len(supporting_readings))
-
-        peak_ocr = max((r.ocr_confidence for r in supporting_readings), default=0.5)
-        avg_pos_conf = float(np.mean(pos_confs)) if pos_confs else peak_ocr
-        consensus_ratio = supporting_count / len(vehicle.readings)
-        final_confidence = min(0.99, max(peak_ocr, float(avg_pos_conf * (0.85 + 0.15 * consensus_ratio))))
+        exact_consensus = self.config.require_exact_frame_consensus and not is_single_image
+        competing_plate = ""
+        if exact_consensus:
+            # A source frame contributes at most one vote, even across linked track IDs.
+            by_frame = {}
+            for reading in sorted(valid_readings, key=lambda r: r.ocr_confidence, reverse=True):
+                by_frame.setdefault(reading.frame_idx, reading)
+            groups = {}
+            for reading in by_frame.values():
+                valid, _, plate = self.normalizer.validate(reading.normalized_text)
+                if valid:
+                    groups.setdefault(plate, []).append(reading)
+            if groups:
+                ranked = sorted(groups, key=lambda plate: (len(groups[plate]), sum(r.ocr_confidence for r in groups[plate])), reverse=True)
+                best_plate = ranked[0]
+                is_valid_plate, fmt_type, best_plate = self.normalizer.validate(best_plate)
+                supporting_readings = groups[best_plate]
+                if len(ranked) > 1 and len(supporting_readings) * 2 <= sum(map(len, groups.values())):
+                    competing_plate = ranked[1]
+            else:
+                supporting_readings = []
+            supporting_count = len(supporting_readings)
+            final_confidence = float(np.mean([r.ocr_confidence for r in supporting_readings])) if supporting_readings else max(r.ocr_confidence for r in valid_readings)
+        else:
+            supporting_readings = [
+                r for r in valid_readings
+                if self.normalizer.calculate_levenshtein(self.normalizer.validate(r.normalized_text)[2], best_plate) >= 0.80
+            ]
+            supporting_count = max(1, len(supporting_readings))
+            peak_ocr = max((r.ocr_confidence for r in supporting_readings), default=0.5)
+            avg_pos_conf = float(np.mean(pos_confs)) if pos_confs else peak_ocr
+            consensus_ratio = supporting_count / len(vehicle.readings)
+            final_confidence = min(0.99, max(peak_ocr, float(avg_pos_conf * (0.85 + 0.15 * consensus_ratio))))
 
         display_plate = self.normalizer.format_display(best_plate)
         vehicle.final_plate = best_plate
@@ -195,7 +217,8 @@ class TemporalVotingEngine:
             vehicle.best_vehicle_crop = best_win_reading.vehicle_crop.copy()
         if best_win_reading.annotated_frame is not None and best_win_reading.annotated_frame.size > 0:
             vehicle.best_annotated_frame = best_win_reading.annotated_frame.copy()
-        vehicle.final_confidence = max(vehicle.final_confidence, float(best_win_reading.ocr_confidence))
+        if not exact_consensus:
+            vehicle.final_confidence = max(vehicle.final_confidence, float(best_win_reading.ocr_confidence))
         vehicle.best_reading = best_win_reading
 
         # Store enhanced crop & diagnostics for Before vs After forensic inspection
@@ -255,7 +278,9 @@ class TemporalVotingEngine:
         if self.config.require_valid_plate_format and not is_valid_plate:
             reasons.append(f"Invalid plate format ({fmt_type})")
 
-        if has_severe_conflict:
+        if competing_plate:
+            reasons.append(f"Conflicting readings: {best_plate} vs {competing_plate}")
+        elif has_severe_conflict and not exact_consensus:
             reasons.append(f"Conflicting readings: '{best_plate}' vs '{top_conflict_plate}'")
 
         if not reasons:
@@ -286,7 +311,7 @@ class TemporalVotingEngine:
             matched_key = None
             if plate in plate_map:
                 matched_key = plate
-            else:
+            elif not self.config.require_exact_frame_consensus:
                 for k in list(plate_map.keys()):
                     existing_v = plate_map[k]
                     time_diff = abs(v.first_timestamp - existing_v.first_timestamp)
